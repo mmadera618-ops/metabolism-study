@@ -17,9 +17,14 @@ nav h1{font-size:1rem;color:#8b7aff;margin-right:auto;font-weight:600}
 main{padding:16px 20px;max-width:1100px;margin:0 auto}
 
 /* CATEGORY PILLS */
-.cat-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.cat-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .cat-pill{background:#141420;color:#777;border:1px solid #1e1e2e;padding:4px 11px;border-radius:14px;cursor:pointer;font-size:.72rem;transition:all .15s;user-select:none}
 .cat-pill:hover,.cat-pill.on{background:#2a1f5e;color:#b0a4ff;border-color:#5a4ab5}
+.cat-pill.ch-pill{font-weight:600;font-size:.78rem;padding:5px 14px}
+.cat-sep{width:1px;height:18px;background:#1e1e2e;margin:0 4px}
+.cat-filter .topic-pills{display:flex;gap:4px;flex-wrap:wrap}
+.cat-pill.topic{font-size:.65rem;padding:3px 8px;opacity:.7}
+.cat-pill.topic.on{opacity:1}
 
 /* STATS */
 .stats{display:flex;gap:16px;margin-bottom:12px;padding:10px 14px;background:#0e0e16;border-radius:8px;border:1px solid #1e1e2e}
@@ -718,10 +723,26 @@ function setMode(m){
 function buildCatPills(){
   const el=document.getElementById('catF');
   const chapters=["Ch 10","Ch 11","Ch 12"];
-  const cats=[...new Set(FC.map(f=>f.cat))];
   let h='';
-  chapters.forEach(c=>{h+=`<span class="cat-pill${activeCats.has(c)?' on':''}" onclick="toggleCat('${c}')" style="border-color:${CH_COLORS[c]||'#1e1e2e'};${activeCats.has(c)?'background:'+CH_COLORS[c]+'22;color:'+CH_COLORS[c]:''}">${c}</span>`;});
-  cats.forEach(c=>{h+=`<span class="cat-pill${activeCats.has(c)?' on':''}" onclick="toggleCat('${c}')">${c}</span>`;});
+  // Chapter pills (prominent)
+  chapters.forEach(c=>{
+    const col=CH_COLORS[c]||'#8b7aff';
+    const isOn=activeCats.has(c);
+    h+=`<span class="cat-pill ch-pill${isOn?' on':''}" onclick="toggleCat('${c}')" style="border-color:${col};${isOn?'background:'+col+'22;color:'+col:''}">${c}</span>`;
+  });
+  // Separator
+  h+='<span class="cat-sep"></span>';
+  // Topic pills (smaller, grouped)
+  const topicsByCh={"Ch 10":["Energy","Redox","Electron Carriers","Enzymes","Regulation"],"Ch 11":["Nutritional Types","Glycolysis","ED Pathway","PPP","TCA Cycle","ETC","ATP Yield","Anaerobic Resp","Fermentation","Chemolithotrophy"],"Ch 12":["Precursor Metabolites","CO2 Fixation","Gluconeogenesis","Nitrogen","Amino Acids","Nucleotides","Fatty Acids","Peptidoglycan","Phosphorus","Biosynthesis"]};
+  // Only show topics for active chapters (or all if none selected)
+  const activeChapters=chapters.filter(c=>activeCats.has(c));
+  const showChapters=activeChapters.length?activeChapters:chapters;
+  showChapters.forEach(ch=>{
+    const topics=topicsByCh[ch]||[];
+    topics.forEach(t=>{
+      h+=`<span class="cat-pill topic${activeCats.has(t)?' on':''}" onclick="toggleCat('${t}')">${t}</span>`;
+    });
+  });
   el.innerHTML=h;
 }
 function toggleCat(c){activeCats.has(c)?activeCats.delete(c):activeCats.add(c);buildCatPills();if(mode==='flashcard'){fcIdx=0;flipped=false;renderFC();}else if(mode==='map')renderMap();updateStats();}
@@ -751,23 +772,24 @@ function renderFC(){
   if(!flipped){
     h+=`<span class="ch-badge ${chCls}">${c.ch}</span>
     <div class="term-name">${c.term}</div>
+    <div class="term-sub" style="color:#555">${c.pathway?c.pathway+' \u2022 ':''}<span style="color:${col}">${c.cat}</span></div>
     <div class="tap">Tap to reveal</div>`;
   } else {
     h+=`<span class="ch-badge ${chCls}">${c.ch}</span>
     <div class="details">
       <div class="detail-row"><div class="detail-label">Definition</div><div class="detail-val">${c.definition}</div></div>`;
     if(c.pathway) h+=`<div class="detail-row"><div class="detail-label">Pathway</div><div class="pills"><span class="pill pill-pathway">${c.pathway}</span></div></div>`;
-    if(c.details&&c.details.length) h+=`<div class="detail-row"><div class="detail-label">Key Points</div>${c.details.map(d=>'<div class="detail-val" style="margin-bottom:3px">- '+d+'</div>').join('')}</div>`;
+    if(c.details&&c.details.length) h+=`<div class="detail-row"><div class="detail-label">Key Points</div><div class="pills">${c.details.map(d=>'<span class="pill pill-pathway">'+d+'</span>').join('')}</div></div>`;
     if(c.connections&&c.connections.length) h+=`<div class="detail-row"><div class="detail-label">Connections</div><div class="pills">${c.connections.map(cn=>'<span class="pill pill-connection">'+cn+'</span>').join('')}</div></div>`;
-    if(c.examTip) h+=`<div class="exam-tip">Exam Tip: ${c.examTip}</div>`;
+    if(c.examTip) h+=`<div class="exam-tip">\u26a0 ${c.examTip}</div>`;
     h+=`</div>`;
   }
   h+=`</div>`;
   h+=`<div class="ctrls">
-    <button onclick="prevFC()">Prev</button>
-    <button class="c-no" onclick="markFC(false)">Still Learning</button>
-    <button class="c-yes" onclick="markFC(true)">Mastered</button>
-    <button onclick="nextFC()">Next</button>
+    <button class="c-no" onclick="markFC(false)">Missed</button>
+    <button onclick="nextFC()">Skip</button>
+    <button class="c-yes" onclick="markFC(true)">Got it</button>
+    <button onclick="shuffleFC()">Shuffle</button>
   </div>`;
   document.getElementById('mode-flashcard').innerHTML=h;
 }
@@ -775,6 +797,7 @@ function flipFC(){flipped=!flipped;renderFC();}
 function nextFC(){const fc=getFilteredFC();fcIdx=(fcIdx+1)%fc.length;flipped=false;renderFC();}
 function prevFC(){const fc=getFilteredFC();fcIdx=(fcIdx-1+fc.length)%fc.length;flipped=false;renderFC();}
 function markFC(v){const fc=getFilteredFC();if(!fc.length)return;const c=fc[fcIdx];if(v){mastered[c.id]=true;streak++;}else{delete mastered[c.id];streak=0;}save();nextFC();updateStats();}
+function shuffleFC(){const a=FC;for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}fcIdx=0;flipped=false;renderFC();}
 
 // ===== QUIZ =====
 let curQ=null;
