@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metabolism Study Tool - MCB3020 Exam 3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#08080d;color:#e0e0e0;min-height:100vh}
+
+/* NAV */
+nav{background:#0e0e16;border-bottom:1px solid #1e1e2e;padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+nav h1{font-size:1rem;color:#8b7aff;margin-right:auto;font-weight:600}
+.nav-btn{background:#141420;color:#999;border:1px solid #1e1e2e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .15s}
+.nav-btn:hover,.nav-btn.active{background:#8b7aff;color:#fff;border-color:#8b7aff}
+
+main{padding:16px 20px;max-width:1100px;margin:0 auto}
+
+/* CATEGORY PILLS */
+.cat-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.cat-pill{background:#141420;color:#777;border:1px solid #1e1e2e;padding:4px 11px;border-radius:14px;cursor:pointer;font-size:.72rem;transition:all .15s;user-select:none}
+.cat-pill:hover,.cat-pill.on{background:#2a1f5e;color:#b0a4ff;border-color:#5a4ab5}
+
+/* STATS */
+.stats{display:flex;gap:16px;margin-bottom:12px;padding:10px 14px;background:#0e0e16;border-radius:8px;border:1px solid #1e1e2e}
+.st{text-align:center}.st .n{font-size:1.2rem;font-weight:700;color:#8b7aff}.st .l{font-size:.65rem;color:#666;margin-top:1px}
+.prog{width:100%;height:4px;background:#141420;border-radius:2px;margin-bottom:16px;overflow:hidden}
+.prog .fill{height:100%;background:linear-gradient(90deg,#8b7aff,#4ade80);border-radius:2px;transition:width .3s}
+
+/* FLASHCARD */
+.fc-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.fc{width:100%;max-width:640px;min-height:300px;background:#0e0e16;border:2px solid #1e1e2e;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;cursor:pointer;transition:border-color .2s;position:relative;overflow:hidden}
+.fc:hover{border-color:#8b7aff}
+.fc .tag{position:absolute;top:12px;left:12px;padding:3px 9px;border-radius:8px;font-size:.68rem;font-weight:600}
+.fc .idx{position:absolute;top:12px;right:12px;color:#444;font-size:.72rem}
+.fc .ch-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;margin-bottom:8px}
+.fc .ch-badge.ch10{background:#2a1f5e;color:#b0a4ff}
+.fc .ch-badge.ch11{background:#0a1e12;color:#4ade80}
+.fc .ch-badge.ch12{background:#1e0e14;color:#ff6bb5}
+.fc .term-name{font-size:1.5rem;font-weight:700;color:#fff;text-align:center;margin-bottom:6px}
+.fc .term-sub{font-size:.82rem;color:#666;margin-bottom:10px}
+.fc .tap{color:#333;font-size:.68rem;position:absolute;bottom:10px}
+.fc .details{width:100%;max-width:500px;text-align:left}
+.fc .detail-row{margin-bottom:10px}
+.fc .detail-label{font-size:.68rem;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.fc .detail-val{font-size:.85rem;color:#ccc;line-height:1.4}
+.fc .pills{display:flex;flex-wrap:wrap;gap:4px}
+.pill{padding:3px 9px;border-radius:10px;font-size:.72rem;font-weight:500}
+.pill-pathway{background:#1a1530;color:#b0a4ff;border:1px solid #3a2a6a}
+.pill-precursor{background:#1a1a0e;color:#ffd700;border:1px solid #3a3a1a}
+.pill-enzyme{background:#0a1e12;color:#4ade80;border:1px solid #1a3a22}
+.pill-energy{background:#1e0e0e;color:#ff6b6b;border:1px solid #3a1a1a}
+.pill-connection{background:#0e1a1e;color:#6bddff;border:1px solid #1a2a3a}
+.fc .key-fact{font-size:.8rem;color:#888;font-style:italic;line-height:1.4}
+.fc .exam-tip{font-size:.75rem;color:#ffd700;margin-top:4px}
+
+.ctrls{display:flex;gap:8px}
+.ctrls button{padding:7px 18px;border-radius:7px;border:1px solid #1e1e2e;background:#141420;color:#bbb;cursor:pointer;font-size:.82rem;transition:all .15s}
+.ctrls button:hover{background:#2a1f5e;color:#fff}
+.c-yes{background:#0a1e12!important;border-color:#1a3a22!important;color:#4ade80!important}
+.c-yes:hover{background:#1a3a22!important}
+.c-no{background:#1e0a0a!important;border-color:#3a1a1a!important;color:#ff6b6b!important}
+.c-no:hover{background:#3a1a1a!important}
+
+/* QUIZ */
+.qz-wrap{max-width:640px;margin:0 auto}
+.qz-box{background:#0e0e16;border:2px solid #1e1e2e;border-radius:12px;padding:24px;margin-bottom:14px}
+.qz-box .ql{color:#8b7aff;font-size:.78rem;margin-bottom:10px}
+.qz-box .qt{font-size:1.1rem;margin-bottom:4px;line-height:1.4}
+.qz-box .qr{color:#ff6b6b;font-size:.9rem;margin-bottom:16px;line-height:1.3}
+.qz-opts{display:flex;flex-direction:column;gap:7px}
+.qz-o{padding:11px 16px;background:#141420;border:1px solid #1e1e2e;border-radius:7px;cursor:pointer;transition:all .15s;font-size:.9rem;line-height:1.3}
+.qz-o:hover{border-color:#8b7aff;background:#1a1a30}
+.qz-o.ok{border-color:#4ade80;background:#0a1e12;color:#4ade80}
+.qz-o.bad{border-color:#ff6b6b;background:#1e0a0a;color:#ff6b6b}
+.qz-o.off{pointer-events:none}
+.qz-fb{margin-top:12px;padding:9px 12px;border-radius:6px;font-size:.82rem;display:none;line-height:1.3}
+.qz-fb.show{display:block}
+.qz-fb.gd{background:#0a1e12;color:#4ade80;border:1px solid #1a3a22}
+.qz-fb.bd{background:#1e0a0a;color:#ff6b6b;border:1px solid #3a1a1a}
+
+/* PATHWAY EXPLORER */
+.pw-wrap{max-width:900px;margin:0 auto}
+.pw-select-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.pw-select{flex:1;min-width:200px;padding:10px 12px;background:#141420;border:1px solid #1e1e2e;border-radius:7px;color:#e0e0e0;font-size:.85rem;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.pw-select:focus{border-color:#8b7aff}
+.pw-select option{background:#141420;color:#e0e0e0}
+.pw-info{background:#0e0e16;border:1px solid #1e1e2e;border-radius:10px;padding:16px;margin-bottom:16px}
+.pw-info .pw-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:4px}
+.pw-info .pw-loc{font-size:.75rem;color:#8b7aff;margin-bottom:8px}
+.pw-info .pw-desc{font-size:.82rem;color:#999;line-height:1.4;margin-bottom:8px}
+.pw-yield{display:flex;gap:10px;flex-wrap:wrap}
+.pw-yield .yd{padding:4px 10px;border-radius:6px;font-size:.72rem;font-weight:600}
+.yd-atp{background:#0a1e12;color:#4ade80;border:1px solid #1a3a22}
+.yd-nadh{background:#1a1530;color:#b0a4ff;border:1px solid #3a2a6a}
+.yd-nadph{background:#1e1a0e;color:#ffd700;border:1px solid #3a3a1a}
+.yd-fadh2{background:#1e0e14;color:#ff6bb5;border:1px solid #3a1a2a}
+.yd-co2{background:#141420;color:#888;border:1px solid #1e1e2e}
+.pw-steps{display:flex;flex-direction:column;gap:2px}
+.pw-step{display:flex;align-items:stretch;gap:0;position:relative}
+.pw-node{min-width:140px;padding:10px 14px;background:#0e0e16;border:1px solid #1e1e2e;border-radius:8px;text-align:center;cursor:pointer;transition:all .15s;position:relative;z-index:1}
+.pw-node:hover{border-color:#8b7aff;background:#141430}
+.pw-node.precursor{border-color:#ffd700;border-width:2px;background:#1a1a0e}
+.pw-node .nd-name{font-size:.88rem;font-weight:600;color:#fff}
+.pw-node .nd-sub{font-size:.65rem;color:#666;margin-top:2px}
+.pw-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 12px;min-width:180px}
+.pw-arrow .arr-line{width:2px;height:16px;background:#1e1e2e}
+.pw-arrow .arr-label{font-size:.68rem;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.arr-enzyme{color:#4ade80;background:#0a1e12;border:1px solid #1a3a22}
+.arr-cost{color:#ff6b6b;background:#1e0a0a;border:1px solid #3a1a1a}
+.arr-gain{color:#4ade80;background:#0a1e12;border:1px solid #1a3a22}
+.arr-neutral{color:#888;background:#141420;border:1px solid #1e1e2e}
+.pw-step-row{display:flex;align-items:center;gap:6px;padding:4px 0}
+.pw-step-arrow{color:#8b7aff;font-size:1.2rem;min-width:24px;text-align:center}
+.pw-step-content{flex:1;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0e0e16;border:1px solid #1e1e2e;border-radius:8px;cursor:pointer;transition:all .15s}
+.pw-step-content:hover{border-color:#8b7aff}
+.pw-step-content.precursor{border-color:#ffd700;border-width:2px;background:#1a1a0e}
+.pw-step-content.energy-cost{border-left:3px solid #ff6b6b}
+.pw-step-content.energy-gain{border-left:3px solid #4ade80}
+.pw-step-content .sc-name{font-size:.88rem;font-weight:600;color:#fff;min-width:100px}
+.pw-step-content .sc-enzyme{font-size:.7rem;color:#4ade80;flex:1}
+.pw-step-content .sc-energy{font-size:.7rem;font-weight:600;min-width:70px;text-align:right}
+.pw-step-content .sc-energy.cost{color:#ff6b6b}
+.pw-step-content .sc-energy.gain{color:#4ade80}
+.pw-detail-popup{background:#141420;border:1px solid #8b7aff;border-radius:10px;padding:16px;margin-top:8px;margin-bottom:8px;animation:fadeSlide .2s ease}
+.pw-detail-popup .dp-title{font-size:.9rem;font-weight:700;color:#fff;margin-bottom:8px}
+.pw-detail-popup .dp-row{margin-bottom:6px}
+.pw-detail-popup .dp-label{font-size:.65rem;color:#555;text-transform:uppercase;letter-spacing:.5px}
+.pw-detail-popup .dp-val{font-size:.82rem;color:#ccc;line-height:1.3}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* CONCEPT MAP */
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.mc{background:#0e0e16;border:1px solid #1e1e2e;border-radius:9px;padding:14px 14px 14px 17px;transition:all .15s;cursor:pointer;border-left:3px solid #1e1e2e;position:relative}
+.mc:hover{border-color:#8b7aff;border-left-color:inherit;transform:translateY(-1px)}
+.mc .mc-cat{font-size:.65rem;display:inline-block;padding:2px 7px;border-radius:7px;margin-bottom:6px}
+.mc .mc-ch{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle}
+.mc .mc-name{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:2px}
+.mc .mc-def{font-size:.75rem;color:#888;line-height:1.3;margin-bottom:4px}
+.mc .mc-pathway{font-size:.68rem;color:#8b7aff;margin-top:2px}
+.mc .mc-key{font-size:.68rem;color:#555;margin-top:5px;font-style:italic}
+.mc.done{opacity:.45}
+
+/* COMPARE */
+.cmp-wrap{max-width:800px;margin:0 auto}
+.cmp-selectors{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
+.cmp-select{flex:1;min-width:200px;padding:10px 12px;background:#141420;border:1px solid #1e1e2e;border-radius:7px;color:#e0e0e0;font-size:.85rem;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.cmp-select:focus{border-color:#8b7aff}
+.cmp-select option,.cmp-select optgroup{background:#141420;color:#e0e0e0}
+.cmp-vs{color:#8b7aff;font-weight:700;font-size:1rem}
+.cmp-presets{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px;justify-content:center}
+.cmp-preset{background:#141420;color:#777;border:1px solid #1e1e2e;padding:4px 10px;border-radius:12px;cursor:pointer;font-size:.68rem;transition:all .15s}
+.cmp-preset:hover{background:#2a1f5e;color:#b0a4ff;border-color:#5a4ab5}
+.cmp-table{width:100%;border-collapse:separate;border-spacing:0;background:#0e0e16;border:1px solid #1e1e2e;border-radius:10px;overflow:hidden}
+.cmp-table th{padding:12px 14px;font-size:.82rem;font-weight:600;text-align:left;border-bottom:1px solid #1e1e2e}
+.cmp-table th:first-child{background:#0a0a14;color:#666;width:120px;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px}
+.cmp-table th.col-a{color:#8b7aff}
+.cmp-table th.col-b{color:#6bddff}
+.cmp-table td{padding:10px 14px;font-size:.82rem;border-bottom:1px solid #0e0e18;vertical-align:top;line-height:1.4}
+.cmp-table td:first-child{background:#0a0a14;color:#666;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.cmp-table tr:last-child td{border-bottom:none}
+.cmp-table td.diff{background:#1a1520}
+.cmp-empty{text-align:center;padding:40px;color:#444;font-size:.9rem}
+
+/* BIG PICTURE */
+.bp-wrap{max-width:700px;margin:0 auto}
+.bp-card{background:#0e0e16;border:2px solid #1e1e2e;border-radius:12px;padding:24px;margin-bottom:14px}
+.bp-card .bp-ch{font-size:.72rem;color:#8b7aff;margin-bottom:8px}
+.bp-card .bp-q{font-size:1.05rem;line-height:1.5;margin-bottom:16px;color:#fff}
+.bp-card .bp-hint-btn{padding:7px 14px;border-radius:7px;border:1px solid #1e1e2e;background:#141420;color:#ffd700;cursor:pointer;font-size:.78rem;transition:all .15s;margin-bottom:8px}
+.bp-card .bp-hint-btn:hover{background:#2a1f1e;border-color:#ffd700}
+.bp-card .bp-answer{background:#141420;border:1px solid #1e1e2e;border-radius:8px;padding:14px;font-size:.85rem;color:#ccc;line-height:1.5;display:none}
+.bp-card .bp-answer.show{display:block}
+.bp-card .bp-answer h4{color:#8b7aff;font-size:.78rem;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.bp-nav{display:flex;gap:8px;justify-content:center;margin-top:10px}
+
+.hidden{display:none!important}
+
+/* TOUCH */
+@media(pointer:coarse){
+  .nav-btn{padding:10px 16px;font-size:.85rem;min-height:44px}
+  .cat-pill{padding:8px 14px;font-size:.8rem;min-height:36px}
+  .ctrls button{padding:10px 22px;font-size:.9rem;min-height:44px}
+  .qz-o{padding:14px 18px;font-size:1rem;min-height:48px}
+  .pw-select{padding:12px;min-height:44px}
+  .pw-step-content{padding:12px 14px;min-height:44px}
+  .bp-card .bp-hint-btn{padding:10px 18px;min-height:44px}
+  .cmp-preset{padding:8px 14px;font-size:.78rem;min-height:36px}
+  .cmp-select{padding:12px;min-height:44px}
+}
+@media(max-width:600px){
+  main{padding:10px 12px}
+  .fc .term-name{font-size:1.2rem}
+  .cmp-selectors{flex-direction:column}
+  .cmp-select{min-width:100%}
+  .cmp-table th:first-child,.cmp-table td:first-child{width:80px;font-size:.6rem}
+  .cmp-table th,.cmp-table td{padding:8px 10px;font-size:.75rem}
+  .pw-step-content .sc-name{min-width:70px;font-size:.78rem}
+  .pw-step-content .sc-enzyme{font-size:.65rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <h1>Metabolism</h1>
+  <button class="nav-btn active" id="btn-flashcard" onclick="setMode('flashcard')">Flashcards</button>
+  <button class="nav-btn" id="btn-quiz" onclick="setMode('quiz')">Quiz</button>
+  <button class="nav-btn" id="btn-pathway" onclick="setMode('pathway')">Pathways</button>
+  <button class="nav-btn" id="btn-map" onclick="setMode('map')">Concepts</button>
+  <button class="nav-btn" id="btn-bigpic" onclick="setMode('bigpic')">Big Picture</button>
+  <button class="nav-btn" id="btn-compare" onclick="setMode('compare')">Compare</button>
+</nav>
+
+<main>
+  <div class="cat-filter" id="catF"></div>
+  <div class="stats">
+    <div class="st"><div class="n" id="sT">0</div><div class="l">Total</div></div>
+    <div class="st"><div class="n" id="sM">0</div><div class="l">Mastered</div></div>
+    <div class="st"><div class="n" id="sS">0</div><div class="l">Streak</div></div>
+    <div class="st"><div class="n" id="sA">0%</div><div class="l">Accuracy</div></div>
+  </div>
+  <div class="prog"><div class="fill" id="pF" style="width:0%"></div></div>
+
+  <div id="mode-flashcard" class="fc-wrap"></div>
+  <div id="mode-quiz" class="qz-wrap hidden">
+    <div class="qz-box">
+      <div class="ql" id="qL"></div>
+      <div class="qt" id="qT"></div>
+      <div class="qr" id="qR"></div>
+      <div class="qz-opts" id="qO"></div>
+      <div class="qz-fb" id="qF"></div>
+    </div>
+    <div class="ctrls" style="justify-content:center"><button onclick="nxtQ()">Next</button></div>
+  </div>
+  <div id="mode-pathway" class="pw-wrap hidden"></div>
+  <div id="mode-map" class="map hidden"></div>
+  <div id="mode-bigpic" class="bp-wrap hidden"></div>
+  <div id="mode-compare" class="cmp-wrap hidden"></div>
+</main>
+
+<script>
+// ===== CATEGORY COLORS =====
+const CAT_COLORS={
+  "Energy":"#8b7aff","Redox":"#ff6b6b","Enzymes":"#4ade80","Regulation":"#ffdb6b",
+  "Electron Carriers":"#6bddff","Glycolysis":"#ff9f6b","ED Pathway":"#b07aff",
+  "PPP":"#ff6bb5","TCA Cycle":"#4ade80","ETC":"#6bddff","Fermentation":"#ffdb6b",
+  "Anaerobic Resp":"#ff6b6b","Chemolithotrophy":"#b0a4ff","Nutritional Types":"#ff9f6b",
+  "ATP Yield":"#4ade80","CO2 Fixation":"#8b7aff","Nitrogen":"#6bddff",
+  "Amino Acids":"#ff6bb5","Nucleotides":"#b07aff","Fatty Acids":"#ffdb6b",
+  "Peptidoglycan":"#ff9f6b","Gluconeogenesis":"#4ade80","Precursor Metabolites":"#ffd700",
+  "Biosynthesis":"#b0a4ff","Phosphorus":"#6bddff"
+};
+const CH_COLORS={"Ch 10":"#b0a4ff","Ch 11":"#4ade80","Ch 12":"#ff6bb5"};
+
+// ===== FLASHCARD DATABASE =====
+const FC=[
+// ---- Ch 10: Introduction to Metabolism ----
+{id:"c10-01",ch:"Ch 10",cat:"Energy",term:"Metabolism",definition:"Sum of all chemical reactions in a cell, divided into catabolism (breakdown) and anabolism (synthesis).",pathway:"",details:["Catabolism releases energy","Anabolism requires energy","They are coupled via ATP"],connections:["ATP","Free Energy"],examTip:"Professor emphasizes coupling of catabolism and anabolism"},
+{id:"c10-02",ch:"Ch 10",cat:"Energy",term:"Catabolism",definition:"Breakdown of complex molecules into simpler ones, releasing energy (exergonic). Provides ATP, reducing power (NADH), and precursor metabolites.",pathway:"",details:["Exergonic reactions","Provides ATP + NADH + precursor metabolites","Fuels anabolism"],connections:["Anabolism","ATP","Amphibolic pathways"],examTip:"Catabolism provides the 3 things anabolism needs"},
+{id:"c10-03",ch:"Ch 10",cat:"Energy",term:"Anabolism",definition:"Synthesis of complex molecules from simpler precursors, requiring energy (endergonic). Uses ATP, NADPH, and precursor metabolites from catabolism.",pathway:"",details:["Endergonic reactions","Requires ATP + NADPH + precursors","Builds macromolecules"],connections:["Catabolism","NADPH","Precursor metabolites"],examTip:"Uses NADPH (not NADH) for biosynthesis"},
+{id:"c10-04",ch:"Ch 10",cat:"Energy",term:"Calories vs Joules",definition:"1 calorie = 4.184 Joules. Both units measure energy. Biochemistry uses kcal and kJ.",pathway:"",details:["1 cal = 4.184 J","1 kcal = 4.184 kJ","ATP hydrolysis = -7.3 kcal = -30.5 kJ"],connections:["ATP","Free Energy"],examTip:"Know the conversion for Nernst equation calculations"},
+{id:"c10-05",ch:"Ch 10",cat:"Energy",term:"Exergonic Reactions",definition:"Reactions with negative delta-G (free energy released). Products have less free energy than reactants. Spontaneous.",pathway:"",details:["Negative delta-G-prime","Energy released","Catabolic reactions are exergonic","Spontaneous thermodynamically"],connections:["Endergonic","Free Energy","Catabolism"],examTip:"Exergonic and endergonic work hand in hand - coupled reactions"},
+{id:"c10-06",ch:"Ch 10",cat:"Energy",term:"Endergonic Reactions",definition:"Reactions with positive delta-G (energy required). Products have more free energy than reactants. Not spontaneous.",pathway:"",details:["Positive delta-G-prime","Energy required","Anabolic reactions are endergonic","Driven by coupling with exergonic reactions"],connections:["Exergonic","Free Energy","Anabolism"],examTip:"Coupled to exergonic reactions via ATP to drive them forward"},
+{id:"c10-07",ch:"Ch 10",cat:"Energy",term:"ATP (Adenosine Triphosphate)",definition:"Primary energy currency of the cell. Nucleotide: ribose + adenine (nitrogenous base) + 3 phosphate groups. Hydrolysis releases -7.3 kcal/mol (-30.5 kJ/mol).",pathway:"",details:["Nucleotide structure","Hydrolysis delta-G = -7.3 kcal/mol = -30.5 kJ/mol","High-energy phosphoanhydride bonds","Couples exergonic to endergonic reactions"],connections:["SLP","Oxidative Phosphorylation","PEP"],examTip:"Know the exact values: -7.3 kcal AND -30.5 kJ"},
+{id:"c10-08",ch:"Ch 10",cat:"Energy",term:"Other NTPs",definition:"GTP (protein synthesis), CTP (lipid synthesis), UTP (peptidoglycan synthesis - NAM/NAG).",pathway:"",details:["GTP = protein synthesis","CTP = lipid synthesis","UTP = peptidoglycan (NAM + NAG)","All nucleoside triphosphates"],connections:["ATP","Peptidoglycan","Biosynthesis"],examTip:"UTP for peptidoglycan is a common test question"},
+{id:"c10-09",ch:"Ch 10",cat:"Energy",term:"PEP (Phosphoenolpyruvate)",definition:"Has HIGHER phosphate transfer potential than ATP. Can donate phosphate to ADP to make ATP via substrate-level phosphorylation.",pathway:"Glycolysis (EMP)",details:["Higher energy than ATP","Donates phosphate to ADP","Precursor metabolite","Final step of glycolysis: PEP -> Pyruvate"],connections:["ATP","SLP","Pyruvate kinase"],examTip:"PEP has HIGHER transfer potential than ATP - this is a key concept"},
+{id:"c10-10",ch:"Ch 10",cat:"Energy",term:"SLP vs Oxidative Phosphorylation",definition:"SLP: direct transfer of phosphate from substrate to ADP (no ETC). OP: ATP made by ATP synthase using proton motive force from ETC.",pathway:"",details:["SLP = substrate-level phosphorylation, direct transfer","OP = oxidative phosphorylation via PMF + ATP synthase","SLP occurs in glycolysis and TCA","OP produces most ATP in aerobic respiration"],connections:["ATP","ETC","PMF","ATP synthase"],examTip:"Know where each type occurs in the pathways"},
+{id:"c10-11",ch:"Ch 10",cat:"Redox",term:"OIL RIG",definition:"Oxidation Is Loss of electrons, Reduction Is Gain of electrons. In redox reactions, electrons transfer from donor (oxidized) to acceptor (reduced).",pathway:"",details:["Oxidation = loss of electrons","Reduction = gain of electrons","Always occur together (redox pair)","Electron donor is oxidized, electron acceptor is reduced"],connections:["Electron carriers","ETC","Standard reduction potential"],examTip:"Fundamental concept - everything builds on this"},
+{id:"c10-12",ch:"Ch 10",cat:"Redox",term:"Standard Reduction Potential (E'0)",definition:"Measure of tendency to accept electrons. More negative = better electron DONOR. More positive = better electron ACCEPTOR.",pathway:"",details:["Measured in volts (V)","More negative = gives up electrons easily","More positive = accepts electrons readily","NADH/NAD+ = -0.32V (good donor)","O2/H2O = +0.82V (best acceptor)"],connections:["Nernst equation","ETC","Redox"],examTip:"Two rules: (1) negative donates to positive, (2) greater delta-E = more energy"},
+{id:"c10-13",ch:"Ch 10",cat:"Redox",term:"Rule 1: Electron Flow Direction",definition:"Electrons flow from MORE NEGATIVE E'0 (donor) to MORE POSITIVE E'0 (acceptor). Like water flowing downhill.",pathway:"ETC",details:["Negative E'0 = electron donor","Positive E'0 = electron acceptor","Energy is released in the process","Drives proton pumping in ETC"],connections:["Standard reduction potential","ETC","PMF"],examTip:""},
+{id:"c10-14",ch:"Ch 10",cat:"Redox",term:"Rule 2: Greater Delta-E'0 = More Energy",definition:"The larger the difference in reduction potentials between donor and acceptor, the more free energy released (delta-G more negative).",pathway:"",details:["delta-E'0 = E'0(acceptor) - E'0(donor)","Larger delta-E'0 = more energy","Why O2 is best terminal acceptor (highest E'0)","Why aerobic > anaerobic respiration"],connections:["Nernst equation","Anaerobic respiration"],examTip:"This explains why aerobic respiration yields more ATP"},
+{id:"c10-15",ch:"Ch 10",cat:"Redox",term:"Nernst Equation",definition:"delta-G' = -nF(delta-E'0). n = electrons transferred, F = Faraday constant (23 kcal/volt-equiv or 96.5 kJ/volt-equiv).",pathway:"",details:["delta-G' = -nF(delta-E'0)","F = 23 kcal/volt-equiv = 96.5 kJ/volt-equiv","n = number of electrons","Used to calculate energy from redox reactions"],connections:["Standard reduction potential","Free energy"],examTip:"Know how to calculate: NADH to O2 example"},
+{id:"c10-16",ch:"Ch 10",cat:"Redox",term:"NADH to O2 Calculation",definition:"NADH/NAD+ (-0.32V) donates to O2/H2O (+0.82V). delta-E'0 = 0.82-(-0.32) = 1.14V. delta-G' = -(2)(23)(1.14) = -52.44 kcal/mol.",pathway:"ETC",details:["E'0 donor (NADH) = -0.32V","E'0 acceptor (O2) = +0.82V","delta-E'0 = 1.14V","n = 2 electrons","delta-G' = -52.44 kcal/mol"],connections:["Nernst equation","ETC"],examTip:"This exact calculation could be on the exam"},
+{id:"c10-17",ch:"Ch 10",cat:"Electron Carriers",term:"NADH / NADPH",definition:"Carry 2 electrons + 1 H+ (hydride ion). NADH from catabolism (delivers to ETC), NADPH for anabolic biosynthesis.",pathway:"Multiple",details:["Carry 2e- + 1H+","NADH = catabolic electron carrier","NADPH = anabolic reducing power","Coenzymes (loosely attached cofactors)"],connections:["ETC","Biosynthesis","PPP"],examTip:"NADH for catabolism, NADPH for anabolism - do not confuse"},
+{id:"c10-18",ch:"Ch 10",cat:"Electron Carriers",term:"FAD / FMN (Flavoproteins)",definition:"Carry 2 electrons + 2 H+. Flavoproteins with flavin prosthetic groups. FAD in TCA cycle (succinate dehydrogenase), FMN in ETC Complex I.",pathway:"TCA/ETC",details:["Carry 2e- + 2H+","Prosthetic groups (permanently attached)","FAD = succinate -> fumarate in TCA","FMN = Complex I (NADH dehydrogenase)"],connections:["TCA cycle","ETC","Succinate dehydrogenase"],examTip:"FAD/FMN are prosthetic groups, not coenzymes"},
+{id:"c10-19",ch:"Ch 10",cat:"Electron Carriers",term:"Coenzyme Q (Ubiquinone)",definition:"Carries 2e- + 2H+. Lipid-soluble, embedded in inner mitochondrial membrane. Mobile carrier between Complexes I/II and Complex III.",pathway:"ETC",details:["2e- + 2H+","Lipid-soluble in membrane","Also called CoQ or ubiquinone","Shuttle between complexes in ETC"],connections:["ETC","Complex I","Complex III"],examTip:"Lipid-soluble = moves within the membrane"},
+{id:"c10-20",ch:"Ch 10",cat:"Electron Carriers",term:"Cytochromes",definition:"Carry 1 electron via iron in heme group. Include cyt bc1 (Complex III), cyt c, cyt oxidase (Complex IV). Fe2+/Fe3+ cycling.",pathway:"ETC",details:["1e- carrier","Iron IN heme group","Multiple types in ETC","Final one (cyt oxidase) transfers to O2"],connections:["ETC","Heme","Iron-sulfur proteins"],examTip:"Iron IN heme = cytochrome. Iron NOT in heme = iron-sulfur protein"},
+{id:"c10-21",ch:"Ch 10",cat:"Electron Carriers",term:"Iron-Sulfur Proteins",definition:"Carry 1 electron via iron NOT in heme group. Ferredoxin is an example. Found in ETC complexes.",pathway:"ETC",details:["1e- carrier","Iron NOT in heme","Ferredoxin is an example","Found in multiple ETC complexes"],connections:["Cytochromes","ETC","Ferredoxin"],examTip:"Distinguish from cytochromes: no heme group"},
+{id:"c10-22",ch:"Ch 10",cat:"Electron Carriers",term:"ETC Location",definition:"Eukaryotes: inner mitochondrial membrane (IMM). Prokaryotes: cell/plasma membrane.",pathway:"ETC",details:["Eukaryotes = inner mitochondrial membrane","Prokaryotes = cell membrane (plasma membrane)","Prokaryotes may have branched ETCs","Both use PMF to drive ATP synthase"],connections:["PMF","ATP synthase"],examTip:"Prokaryotes have no mitochondria so use cell membrane"},
+{id:"c10-23",ch:"Ch 10",cat:"Energy",term:"Multiple Steps Harvest More Energy",definition:"Releasing energy in many small steps (ETC) harvests more usable energy than one big reaction. Each step can be coupled to proton pumping.",pathway:"ETC",details:["Stepwise release captures more energy as ATP","One big step would release energy as heat","ETC has multiple electron transfer steps","Each coupled to proton translocation"],connections:["ETC","PMF","ATP synthase"],examTip:"Why ETC exists rather than direct NADH->O2 reaction"},
+{id:"c10-24",ch:"Ch 10",cat:"Enzymes",term:"Enzymes as Catalysts",definition:"Biological catalysts that speed up reactions by lowering activation energy (Ea). Do NOT change equilibrium or delta-G. Not consumed.",pathway:"",details:["Lower activation energy (Ea)","Do NOT alter equilibrium","Do NOT change delta-G","Are not consumed in the reaction","Highly specific"],connections:["Activation energy","Induced fit"],examTip:"Enzymes lower Ea but do NOT change equilibrium"},
+{id:"c10-25",ch:"Ch 10",cat:"Enzymes",term:"Holoenzyme = Apoenzyme + Cofactor",definition:"Apoenzyme (protein part) + cofactor (non-protein helper) = holoenzyme (active enzyme). Cofactors: prosthetic groups (permanent) or coenzymes (loose).",pathway:"",details:["Apoenzyme = protein portion alone (inactive)","Cofactor = non-protein component needed","Prosthetic group = permanently attached (FAD, FMN, heme)","Coenzyme = loosely attached, recyclable (NADH, CoA)"],connections:["FAD","NADH","Coenzyme A"],examTip:"Prosthetic group = permanent vs coenzyme = loose/recyclable"},
+{id:"c10-26",ch:"Ch 10",cat:"Enzymes",term:"Induced Fit Model",definition:"Enzyme active site changes shape slightly upon substrate binding to achieve optimal fit. More accurate than lock-and-key model.",pathway:"",details:["Active site molds around substrate","Dynamic interaction","More accurate than lock-and-key","Explains broad substrate specificity of some enzymes"],connections:["Active site","Substrate specificity"],examTip:""},
+{id:"c10-27",ch:"Ch 10",cat:"Enzymes",term:"Effects on Enzyme Activity",definition:"Substrate concentration (Km, saturation at Vmax), pH (optimal range, denaturation at extremes), temperature (increases rate until denaturation).",pathway:"",details:["Km = substrate conc at half Vmax","Saturation kinetics","Each enzyme has optimal pH","Temperature increases rate then denatures"],connections:["Km","Vmax","Denaturation"],examTip:"Know what happens at saturation (all active sites occupied)"},
+{id:"c10-28",ch:"Ch 10",cat:"Enzymes",term:"Competitive Inhibition",definition:"Inhibitor binds active site, competes with substrate. Overcome by increasing substrate concentration. Example: sulfa drugs competing with PABA.",pathway:"",details:["Binds active site","Competes with substrate","Overcome by high [substrate]","Increases apparent Km","Sulfa drugs vs PABA (folic acid synthesis)"],connections:["Noncompetitive inhibition","Sulfa drugs","PABA"],examTip:"Sulfa drugs = classic competitive inhibitor example"},
+{id:"c10-29",ch:"Ch 10",cat:"Enzymes",term:"Noncompetitive (Allosteric) Inhibition",definition:"Inhibitor binds allosteric site (not active site), changes enzyme shape, reduces activity. NOT overcome by increasing substrate.",pathway:"",details:["Binds allosteric site","Changes active site shape","Cannot be overcome by more substrate","Decreases Vmax","Does not affect Km"],connections:["Competitive inhibition","Allosteric regulation"],examTip:"Key difference: NOT overcome by more substrate"},
+{id:"c10-30",ch:"Ch 10",cat:"Enzymes",term:"Ribozymes",definition:"RNA molecules that catalyze reactions. Examples: peptide bond formation (ribosome), self-splicing introns.",pathway:"",details:["RNA catalysts","Ribosomal RNA catalyzes peptide bonds","Self-splicing introns","Supports RNA world hypothesis"],connections:["Ribosome","RNA"],examTip:"Ribosome is a ribozyme"},
+{id:"c10-31",ch:"Ch 10",cat:"Regulation",term:"Allosteric Regulation",definition:"Reversible, non-covalent binding of effectors at allosteric site. Positive effectors activate, negative effectors inhibit enzyme.",pathway:"",details:["Reversible and non-covalent","Positive effector = activates","Negative effector = inhibits","Changes enzyme conformation","Key regulatory mechanism"],connections:["Feedback inhibition","Pacemaker enzymes"],examTip:"Non-covalent = reversible. Contrast with covalent modification"},
+{id:"c10-32",ch:"Ch 10",cat:"Regulation",term:"Covalent Modification",definition:"Reversible chemical modification of enzyme: phosphorylation (kinase adds, phosphatase removes), acetylation, methylation, ubiquitination, glycosylation.",pathway:"",details:["Phosphorylation: kinase adds PO4, phosphatase removes","Acetylation, methylation also common","Ubiquitination targets for degradation","Glycosylation adds sugar groups"],connections:["Allosteric regulation","Kinase","Phosphatase"],examTip:"Kinase adds phosphate, phosphatase removes it"},
+{id:"c10-33",ch:"Ch 10",cat:"Regulation",term:"Feedback (End-Product) Inhibition",definition:"End product of a pathway inhibits the first enzyme in the pathway. The seesaw of metabolism. Prevents overproduction.",pathway:"",details:["End product inhibits first committed step","Seesaw of metabolism","Prevents waste of resources","Usually allosteric inhibition","Isoenzymes allow fine-tuning"],connections:["Pacemaker enzymes","Isoenzymes","Allosteric regulation"],examTip:"Seesaw of metabolism - professor's phrase"},
+{id:"c10-34",ch:"Ch 10",cat:"Regulation",term:"Pacemaker Enzymes",definition:"Control the overall rate of a metabolic pathway. Example: PFK1 (phosphofructokinase-1) in glycolysis. Often target of allosteric regulation.",pathway:"Glycolysis",details:["Rate-limiting step of pathway","Usually first committed step","PFK1 is THE pacemaker of glycolysis","Target of feedback regulation"],connections:["PFK1","Feedback inhibition","Glycolysis"],examTip:"PFK1 is the most important pacemaker enzyme to know"},
+{id:"c10-35",ch:"Ch 10",cat:"Regulation",term:"Isoenzymes",definition:"Different enzymes that catalyze the same reaction but are regulated differently. Look different, do the same thing. Example: LDH has 5 isoenzymes.",pathway:"",details:["Same reaction, different regulation","Different tissue distribution","LDH has 5 isoenzymes","Allow fine-tuned regulation in different conditions"],connections:["Pacemaker enzymes","LDH"],examTip:"LDH isoenzymes = classic example"},
+{id:"c10-36",ch:"Ch 10",cat:"Regulation",term:"Metabolic Channeling",definition:"Physical arrangement to pass intermediates directly between enzymes without releasing into cytoplasm. Increases efficiency.",pathway:"",details:["Direct transfer between adjacent enzymes","Multienzyme complexes","Increases efficiency","Prevents loss of intermediates"],connections:["Enzyme regulation"],examTip:""},
+{id:"c10-37",ch:"Ch 10",cat:"Energy",term:"Biochemical Pathway Types",definition:"Linear (A->B->C), cyclic (TCA cycle), branching (amino acid synthesis). Substrate -> intermediates -> end product.",pathway:"",details:["Linear: sequential steps","Cyclic: regenerates starting molecule (TCA)","Branching: one pathway feeds multiple products","Substrate -> intermediate -> end product"],connections:["TCA cycle","Glycolysis","Amino acid synthesis"],examTip:""},
+
+// ---- Ch 11: Catabolism ----
+{id:"c11-01",ch:"Ch 11",cat:"Nutritional Types",term:"Photolithoautotroph",definition:"Light energy, inorganic electron donor, CO2 carbon source. Examples: cyanobacteria, algae, plants.",pathway:"",details:["Energy: light","Electrons: inorganic (H2O, H2S)","Carbon: CO2","Examples: cyanobacteria, plants, algae"],connections:["Calvin cycle","Photosynthesis"],examTip:"Most familiar nutritional type"},
+{id:"c11-02",ch:"Ch 11",cat:"Nutritional Types",term:"Chemoorganoheterotroph",definition:"Chemical energy from organic molecules, organic electron donors, organic carbon source. Most pathogens and humans.",pathway:"",details:["Energy: chemical (organic)","Electrons: organic molecules","Carbon: organic molecules","Most medically important bacteria","Humans are this type"],connections:["Glycolysis","TCA","ETC"],examTip:"Most common nutritional type in microbiology course"},
+{id:"c11-03",ch:"Ch 11",cat:"Nutritional Types",term:"Chemolithoautotroph",definition:"Chemical energy from inorganic compounds, inorganic electron donors, CO2 carbon source. Examples: nitrifying bacteria, sulfur oxidizers.",pathway:"",details:["Energy: chemical (inorganic)","Electrons: inorganic (NH4+, H2S, Fe2+)","Carbon: CO2","Nitrifying bacteria, iron oxidizers"],connections:["Chemolithotrophy","Nitrification"],examTip:"Important for biogeochemical cycles"},
+{id:"c11-04",ch:"Ch 11",cat:"Nutritional Types",term:"Photoorganoheterotroph",definition:"Light energy, organic electron donors, organic carbon source. Example: purple non-sulfur bacteria.",pathway:"",details:["Energy: light","Electrons: organic","Carbon: organic","Purple non-sulfur bacteria"],connections:["Phototrophy"],examTip:"Least common type to remember"},
+{id:"c11-05",ch:"Ch 11",cat:"Glycolysis",term:"Embden-Meyerhof Pathway (EMP/Glycolysis)",definition:"Most common glycolytic pathway. Glucose -> 2 Pyruvate. Net: 2 ATP (SLP), 2 NADH. Used by most organisms.",pathway:"Glycolysis",details:["10-step pathway in cytoplasm","Investment phase uses 2 ATP","Payoff phase makes 4 ATP (net 2)","Produces 2 NADH","6 precursor metabolites produced"],connections:["TCA cycle","Fermentation","Transition reaction","PFK1"],examTip:"Most tested pathway - know every step"},
+{id:"c11-06",ch:"Ch 11",cat:"Glycolysis",term:"EMP Investment Phase",definition:"Glucose -> G6P -> F6P -> F1,6BP. Uses 2 ATP. PFK1 is the pacemaker enzyme catalyzing F6P -> F1,6BP.",pathway:"Glycolysis",details:["Glucose + ATP -> G6P (hexokinase)","G6P -> F6P (isomerase)","F6P + ATP -> F1,6BP (PFK1 = pacemaker!)","2 ATP consumed","Traps glucose in cell"],connections:["PFK1","G6P","F6P"],examTip:"PFK1 is the KEY regulatory enzyme"},
+{id:"c11-07",ch:"Ch 11",cat:"Glycolysis",term:"EMP Payoff Phase",definition:"F1,6BP splits into DHAP + G3P, then through 1,3BPG -> 3PG -> 2PG -> PEP -> Pyruvate. Makes 4 ATP + 2 NADH (per glucose).",pathway:"Glycolysis",details:["F1,6BP -> DHAP + G3P (aldolase)","G3P -> 1,3BPG (makes NADH)","1,3BPG -> 3PG (makes ATP by SLP)","3PG -> 2PG -> PEP","PEP -> Pyruvate (makes ATP by SLP, pyruvate kinase)"],connections:["G3P","3PG","PEP","Pyruvate"],examTip:"4 ATP made but net is 2 (minus 2 from investment)"},
+{id:"c11-08",ch:"Ch 11",cat:"Glycolysis",term:"PFK1 (Phosphofructokinase-1)",definition:"THE pacemaker enzyme of glycolysis. Catalyzes F6P -> F1,6BP. Allosterically inhibited by ATP, citrate. Activated by AMP, ADP.",pathway:"Glycolysis",details:["Irreversible, committed step","Inhibited by ATP (high energy)","Inhibited by citrate (TCA running well)","Activated by AMP/ADP (low energy)","Rate-limiting step"],connections:["Feedback inhibition","Glycolysis","ATP"],examTip:"Most important enzyme to know for regulation"},
+{id:"c11-09",ch:"Ch 11",cat:"ED Pathway",term:"Entner-Doudoroff Pathway (ED)",definition:"Alternative glycolytic pathway. Glucose -> G6P -> 6PG -> KDPG -> Pyruvate + G3P. Net: 1 ATP, 1 NADH, 1 NADPH.",pathway:"ED Pathway",details:["Unique intermediate: KDPG","Net 1 ATP (half of EMP)","Produces both NADH and NADPH","G3P feeds into lower EMP","Used by some Gram-negatives"],connections:["EMP","Pseudomonas","Rhizobium"],examTip:"Half the ATP of EMP but makes NADPH too"},
+{id:"c11-10",ch:"Ch 11",cat:"PPP",term:"Pentose Phosphate Pathway (PPP/HMP Shunt)",definition:"Produces NADPH for biosynthesis and precursor metabolites (R5P, E4P, S7P). Runs simultaneously with EMP. No direct ATP production.",pathway:"PPP",details:["Oxidative phase: G6P -> 6PG -> Ribulose-5P + 2 NADPH + CO2","Non-oxidative: sugar rearrangements","Produces Ribose-5P for nucleotides","Produces Erythrose-4P for aromatic amino acids","0 ATP directly"],connections:["Nucleotide synthesis","NADPH","EMP"],examTip:"Runs SIMULTANEOUSLY with EMP or ED in most organisms"},
+{id:"c11-11",ch:"Ch 11",cat:"PPP",term:"PPP Precursor Metabolites",definition:"Ribulose-5P, Ribose-5P (nucleotides), Erythrose-4P (aromatic amino acids), Sedoheptulose-7P.",pathway:"PPP",details:["Ribulose-5P","Ribose-5P -> nucleotide synthesis","Erythrose-4P -> aromatic amino acids (with PEP)","Sedoheptulose-7P"],connections:["Nucleotides","Amino acids","EMP"],examTip:"R5P for nucleotides is high-yield"},
+{id:"c11-12",ch:"Ch 11",cat:"TCA Cycle",term:"Transition Reaction",definition:"Pyruvate -> Acetyl-CoA + CO2 + NADH. Catalyzed by pyruvate dehydrogenase complex. IRREVERSIBLE. Links glycolysis to TCA.",pathway:"Transition",details:["Pyruvate dehydrogenase complex","Produces 1 NADH per pyruvate (2 per glucose)","Releases 1 CO2","IRREVERSIBLE reaction","Occurs in mitochondrial matrix (euk) or cytoplasm (prok)"],connections:["Pyruvate","Acetyl-CoA","TCA cycle"],examTip:"IRREVERSIBLE - this is why you cannot make glucose from acetyl-CoA"},
+{id:"c11-13",ch:"Ch 11",cat:"TCA Cycle",term:"TCA Cycle (Krebs/Citric Acid Cycle)",definition:"Acetyl-CoA + OAA -> Citrate, then through 8 steps back to OAA. Per turn: 3 NADH, 1 FADH2, 1 GTP, 2 CO2. Amphibolic.",pathway:"TCA Cycle",details:["Acetyl-CoA + OAA -> Citrate (citrate synthase)","Citrate -> Isocitrate -> alpha-ketoglutarate -> Succinyl-CoA","Succinyl-CoA -> Succinate -> Fumarate -> Malate -> OAA","Per glucose (x2): 6 NADH, 2 FADH2, 2 GTP, 4 CO2","Location: matrix (euk), cytoplasm (prok)"],connections:["ETC","Precursor metabolites","Amphibolic"],examTip:"Know all intermediates and which produce NADH/FADH2"},
+{id:"c11-14",ch:"Ch 11",cat:"TCA Cycle",term:"TCA Precursor Metabolites",definition:"Acetyl-CoA (fatty acid synthesis), alpha-ketoglutarate (glutamate family amino acids), Succinyl-CoA, OAA (aspartate family amino acids).",pathway:"TCA Cycle",details:["Acetyl-CoA -> fatty acids","alpha-ketoglutarate -> glutamate, glutamine, proline, arginine","OAA -> aspartate, asparagine, lysine, methionine, threonine, isoleucine","Succinyl-CoA -> porphyrins (heme)"],connections:["Amino acid synthesis","Fatty acid synthesis","Amphibolic"],examTip:"TCA is amphibolic - both catabolic AND anabolic"},
+{id:"c11-15",ch:"Ch 11",cat:"ETC",term:"Electron Transport Chain (ETC)",definition:"Series of electron carriers in membrane that transfer electrons from NADH/FADH2 to terminal electron acceptor (O2 in aerobic). Creates PMF.",pathway:"ETC",details:["Prokaryotes: cell membrane (branched)","Eukaryotes: IMM (linear)","NADH dehydrogenase -> CoQ -> cyt bc1 -> cyt c -> cyt oxidase -> O2","Pumps protons to create PMF","PMF drives ATP synthase"],connections:["PMF","ATP synthase","NADH","FADH2"],examTip:"Prokaryotic ETC is branched (bo and bd branches)"},
+{id:"c11-16",ch:"Ch 11",cat:"ETC",term:"Proton Motive Force (PMF)",definition:"Electrochemical gradient of protons across membrane created by ETC. Drives ATP synthase AND flagellar rotation, active transport, reverse electron flow.",pathway:"ETC",details:["Created by proton pumping in ETC","Chemical gradient (pH) + electrical gradient (charge)","Drives ATP synthase (chemiosmosis)","Also drives flagellar motor","Also drives active transport","Also drives reverse electron flow"],connections:["ATP synthase","ETC","Chemiosmosis"],examTip:"PMF has 4 uses: ATP synthesis, flagella, transport, reverse e- flow"},
+{id:"c11-17",ch:"Ch 11",cat:"ETC",term:"ATP Yield from Electron Carriers",definition:"NADH -> approximately 2.5 ATP via oxidative phosphorylation. FADH2 -> approximately 1.5 ATP via OP. FADH2 enters at CoQ (skips Complex I).",pathway:"ETC",details:["NADH enters at Complex I -> ~2.5 ATP","FADH2 enters at CoQ (Complex II) -> ~1.5 ATP","FADH2 bypasses Complex I = less protons pumped","These are approximate values"],connections:["NADH","FADH2","Complex I","Complex II"],examTip:"Know why FADH2 makes less: enters later, fewer protons pumped"},
+{id:"c11-18",ch:"Ch 11",cat:"ATP Yield",term:"Total Aerobic ATP Yield",definition:"Glycolysis: 2 ATP + 2 NADH. Transition: 2 NADH. TCA: 2 GTP + 6 NADH + 2 FADH2. Total: ~32 ATP (prokaryotes up to ~38).",pathway:"Complete pathway",details:["Total NADH: 10 x 2.5 = 25 ATP","Total FADH2: 2 x 1.5 = 3 ATP","Total SLP: 4 ATP (2 glycolysis + 2 GTP)","GRAND TOTAL: ~32 ATP","Prokaryotes may get ~38 (no shuttle cost)"],connections:["Glycolysis","TCA","ETC"],examTip:"32 ATP is the number to know. Be able to show the math."},
+{id:"c11-19",ch:"Ch 11",cat:"Anaerobic Resp",term:"Anaerobic Respiration",definition:"Uses terminal electron acceptors OTHER than O2: NO3-, SO4(2-), CO2, Fe3+, fumarate. Still uses ETC but less ATP due to lower delta-E'0.",pathway:"Anaerobic respiration",details:["Same basic ETC mechanism","Lower delta-E'0 = less energy released","Less ATP than aerobic","NO3- is most common alternative","Denitrification: NO3- -> N2"],connections:["Aerobic respiration","Denitrification","Standard reduction potential"],examTip:"Less ATP because acceptors have lower E'0 than O2"},
+{id:"c11-20",ch:"Ch 11",cat:"Anaerobic Resp",term:"Dissimilatory Nitrate Reduction",definition:"Catabolic use of NO3- as terminal electron acceptor. NO3- -> NO2- -> N2 (denitrification). Done by Pseudomonas. Removes nitrogen from environment.",pathway:"Anaerobic respiration",details:["NO3- used as terminal e- acceptor","Denitrification: NO3- -> NO2- -> NO -> N2O -> N2","Pseudomonas is key organism","Returns N2 to atmosphere","Catabolic (energy generating)"],connections:["Assimilatory nitrate reduction","Nitrogen cycle","Pseudomonas"],examTip:"Dissimilatory = energy. Assimilatory = building blocks (anabolic)."},
+{id:"c11-21",ch:"Ch 11",cat:"Fermentation",term:"Fermentation",definition:"No ETC, no external electron acceptor. Organic molecule is both electron donor AND acceptor. Only SLP (glycolysis) for ATP. Much less ATP.",pathway:"Fermentation",details:["No ETC involved","Organic molecule = donor + acceptor","Only 2 ATP from glycolysis (SLP)","Regenerates NAD+ so glycolysis can continue","Products: ethanol, lactic acid, mixed acids, etc."],connections:["Glycolysis","NAD+","Aerobic respiration"],examTip:"Key: fermentation regenerates NAD+ to keep glycolysis going"},
+{id:"c11-22",ch:"Ch 11",cat:"Fermentation",term:"Ethanol Fermentation",definition:"Pyruvate -> acetaldehyde + CO2 -> ethanol. Done by yeast (Saccharomyces). Used in beer, wine, bread.",pathway:"Fermentation",details:["Pyruvate -> acetaldehyde + CO2","Acetaldehyde + NADH -> ethanol + NAD+","Yeast (Saccharomyces cerevisiae)","CO2 makes bread rise","2 ATP total from glycolysis"],connections:["Yeast","Glycolysis","NAD+"],examTip:"CO2 from ethanol fermentation = bread rises"},
+{id:"c11-23",ch:"Ch 11",cat:"Fermentation",term:"Lactic Acid Fermentation",definition:"Pyruvate + NADH -> Lactate + NAD+. Done by lactic acid bacteria (LAB). Homolactic (only lactate) vs heterolactic (lactate + ethanol + CO2).",pathway:"Fermentation",details:["Pyruvate directly reduced to lactate","Regenerates NAD+","Homolactic = only lactate (Streptococcus, Lactobacillus)","Heterolactic = lactate + ethanol + CO2","Used in yogurt, cheese, sauerkraut"],connections:["LAB","Food production","Glycolysis"],examTip:"Homolactic vs heterolactic is testable"},
+{id:"c11-24",ch:"Ch 11",cat:"Fermentation",term:"Fermentation Products & ID",definition:"Different organisms produce different fermentation products. Used in bacteriological identification (e.g., MRVP tests, gas production).",pathway:"Fermentation",details:["Mixed acid fermentation (E. coli) - MR positive","Butanediol fermentation (Klebsiella) - VP positive","Gas production helps identify species","MRVP = Methyl Red / Voges-Proskauer"],connections:["E. coli","Klebsiella","Lab identification"],examTip:"MRVP tests use fermentation products for ID"},
+{id:"c11-25",ch:"Ch 11",cat:"Fermentation",term:"Why Respiration > Fermentation",definition:"Respiration uses ETC to extract much more energy from NADH (via PMF). Fermentation only gets 2 ATP from SLP. Respiration = ~32 ATP vs fermentation = 2 ATP.",pathway:"",details:["ETC harvests energy from NADH -> ~25 ATP from NADH alone","Fermentation just regenerates NAD+, wastes NADH energy","32 ATP vs 2 ATP per glucose","Respiration 16x more efficient"],connections:["ETC","PMF","ATP synthase"],examTip:"Classic exam question: explain why respiration yields more ATP"},
+{id:"c11-26",ch:"Ch 11",cat:"Chemolithotrophy",term:"Chemolithotrophy",definition:"Energy from oxidation of inorganic compounds: H2, NH4+, NO2-, H2S, S, Fe2+. Use ETC and oxidative phosphorylation. Less energy than glucose.",pathway:"Chemolithotrophy",details:["Inorganic electron donors","Use ETC and OP","Less energy than glucose oxidation","Nitrification: NH4+ -> NO2- -> NO3-","Sulfur oxidation: H2S -> S -> SO4(2-)","Iron oxidation: Fe2+ -> Fe3+"],connections:["Nitrification","Sulfur bacteria","Iron bacteria"],examTip:"Important for biogeochemical cycling"},
+{id:"c11-27",ch:"Ch 11",cat:"Glycolysis",term:"EMP Precursor Metabolites",definition:"G6P, F6P, G3P (GAP), 3PG, PEP, Pyruvate. Six of the twelve precursor metabolites come from glycolysis.",pathway:"Glycolysis",details:["G6P -> polysaccharides","F6P -> peptidoglycan","G3P -> lipids","3PG -> serine family amino acids","PEP -> aromatic amino acids (with E4P)","Pyruvate -> alanine, valine, leucine"],connections:["Precursor metabolites","Biosynthesis"],examTip:"6 of 12 precursor metabolites from EMP alone"},
+{id:"c11-28",ch:"Ch 11",cat:"TCA Cycle",term:"Amphibolic Pathways",definition:"Pathways that serve both catabolism and anabolism. TCA cycle is the prime example - degrades acetyl-CoA AND provides precursors for biosynthesis.",pathway:"TCA Cycle",details:["TCA = both catabolic and anabolic","Catabolic: oxidizes acetyl-CoA, produces NADH/FADH2","Anabolic: provides precursor metabolites","Anaplerotic reactions replenish intermediates"],connections:["TCA cycle","Anaplerotic reactions","Precursor metabolites"],examTip:"If TCA intermediates are pulled for anabolism, anaplerotic reactions refill them"},
+{id:"c11-29",ch:"Ch 11",cat:"Nutritional Types",term:"Fueling Reactions",definition:"Energy-conserving reactions + generate precursor metabolites + provide reducing power (NADH/NADPH). The three purposes of catabolism.",pathway:"",details:["Conserve energy (ATP, PMF)","Generate 12 precursor metabolites","Provide reducing power (NADH, NADPH)","All three needed for biosynthesis"],connections:["Catabolism","Anabolism","Precursor metabolites"],examTip:"Three products of fueling reactions"},
+{id:"c11-30",ch:"Ch 11",cat:"Glycolysis",term:"Three Glycolytic Pathways",definition:"EMP (most common, 2 ATP), ED (Gram-negatives, 1 ATP), PPP (NADPH + precursors, 0 ATP). PPP runs alongside EMP or ED.",pathway:"Glycolysis",details:["EMP: 2 ATP, 2 NADH - most organisms","ED: 1 ATP, 1 NADH, 1 NADPH - some Gram-negatives","PPP: 0 ATP, 2 NADPH - all organisms","PPP runs simultaneously with others","Different yields, different purposes"],connections:["EMP","ED","PPP"],examTip:"Compare yields across all three for exam"},
+
+// ---- Ch 12: Anabolism ----
+{id:"c12-01",ch:"Ch 12",cat:"Precursor Metabolites",term:"The 12 Precursor Metabolites",definition:"12 intermediates from central pathways that serve as starting materials for ALL biosynthesis. From EMP (6), PPP (3-4), TCA (3-4).",pathway:"Multiple",details:["EMP: G6P, F6P, G3P, 3PG, PEP, Pyruvate","PPP: Ribulose-5P, Ribose-5P, Erythrose-4P, Sedoheptulose-7P","TCA: Acetyl-CoA, alpha-ketoglutarate, OAA","(Succinyl-CoA also sometimes listed)"],connections:["Biosynthesis","Central metabolism"],examTip:"MUST know all 12 and which pathway they come from"},
+{id:"c12-02",ch:"Ch 12",cat:"CO2 Fixation",term:"Calvin-Benson Cycle (CBC)",definition:"CO2 fixation pathway. Three phases: fixation (CO2 + RuBP -> 2x 3PG), reduction (3PG -> G3P), regeneration (G3P -> RuBP). Key enzyme: RuBisCO.",pathway:"Calvin Cycle",details:["Fixation: CO2 + RuBP -> 2x 3-phosphoglycerate","Reduction: 3PG -> G3P (uses ATP + NADPH)","Regeneration: G3P -> RuBP (uses ATP)","Net: 3 CO2 + 9 ATP + 6 NADPH -> 1 G3P","RuBisCO in carboxysomes (prok) or stroma (euk)"],connections:["RuBisCO","Autotrophy","CO2"],examTip:"Net equation: 3 CO2 + 9 ATP + 6 NADPH = 1 G3P"},
+{id:"c12-03",ch:"Ch 12",cat:"CO2 Fixation",term:"RuBisCO",definition:"Ribulose-1,5-bisphosphate carboxylase/oxygenase. Most abundant enzyme on Earth. Fixes CO2 onto RuBP. Located in carboxysomes (prokaryotes) or stroma (eukaryotes).",pathway:"Calvin Cycle",details:["Catalyzes CO2 + RuBP -> 2x 3PG","Most abundant enzyme on Earth","In carboxysomes in prokaryotes","In chloroplast stroma in eukaryotes","Slow enzyme, needs lots of it"],connections:["Calvin cycle","Carboxysomes"],examTip:"Carboxysomes in prokaryotes, stroma in eukaryotes"},
+{id:"c12-04",ch:"Ch 12",cat:"CO2 Fixation",term:"Anaplerotic Reactions",definition:"Replenish TCA cycle intermediates that get pulled out for biosynthesis. Example: PEP carboxylase adds CO2 to PEP -> OAA.",pathway:"TCA Cycle",details:["Refill TCA intermediates","PEP + CO2 -> OAA (PEP carboxylase)","Pyruvate + CO2 -> OAA (pyruvate carboxylase)","Essential when TCA intermediates used for biosynthesis","Without them, TCA cycle would stall"],connections:["TCA cycle","Amphibolic","OAA"],examTip:"If you pull OAA for amino acids, anaplerotic reactions make more"},
+{id:"c12-05",ch:"Ch 12",cat:"CO2 Fixation",term:"Reductive TCA Cycle",definition:"Reverse TCA cycle used by some autotrophs to fix CO2. Requires unique enzymes (ATP citrate lyase, ferredoxin-linked enzymes). Runs TCA backwards.",pathway:"Reductive TCA",details:["Runs TCA in reverse to fix CO2","Used by some chemolithoautotrophs","Requires ATP citrate lyase","Requires reduced ferredoxin","Different from regular TCA"],connections:["TCA cycle","Autotrophy","CO2 fixation"],examTip:"Unique enzymes distinguish it from forward TCA"},
+{id:"c12-06",ch:"Ch 12",cat:"Gluconeogenesis",term:"Gluconeogenesis",definition:"Synthesis of glucose from non-sugar precursors. Reverse of glycolysis with bypass enzymes: PEP carboxykinase (replaces pyruvate kinase), fructose bisphosphatase (replaces PFK).",pathway:"Gluconeogenesis",details:["Reverse of glycolysis mostly","3 irreversible steps need bypass enzymes","PEP carboxykinase: OAA -> PEP","Fructose bisphosphatase: F1,6BP -> F6P","Glucose-6-phosphatase: G6P -> glucose"],connections:["Glycolysis","PFK1","Pyruvate kinase"],examTip:"Know the 3 bypass enzymes and which glycolysis enzyme they replace"},
+{id:"c12-07",ch:"Ch 12",cat:"Nitrogen",term:"Assimilatory Nitrate Reduction",definition:"Anabolic pathway: NO3- -> NO2- -> NH4+ (nitrate reductase, nitrite reductase). NH4+ incorporated into amino acids. For BUILDING, not energy.",pathway:"Nitrogen assimilation",details:["NO3- -> NO2- (nitrate reductase)","NO2- -> NH4+ (nitrite reductase)","Anabolic (for amino acid synthesis)","Contrast with dissimilatory (catabolic, for energy)"],connections:["Dissimilatory nitrate reduction","Amino acid synthesis"],examTip:"Assimilatory = building (anabolic). Dissimilatory = energy (catabolic)."},
+{id:"c12-08",ch:"Ch 12",cat:"Nitrogen",term:"Nitrogen Fixation",definition:"N2 -> NH4+ by nitrogenase enzyme. Only certain bacteria: Rhizobium (legume symbiont), Klebsiella, Cyanobacteria. Extremely energy expensive.",pathway:"Nitrogen fixation",details:["N2 + 8H+ + 8e- + 16 ATP -> 2 NH4+ + H2 + 16 ADP","Nitrogenase is oxygen-sensitive","Rhizobium in root nodules of legumes","Cyanobacteria in heterocysts","Klebsiella (free-living)"],connections:["Nitrogenase","Rhizobium","Cyanobacteria"],examTip:"Know the 3 organisms and that nitrogenase needs anaerobic conditions"},
+{id:"c12-09",ch:"Ch 12",cat:"Nitrogen",term:"NH4+ Incorporation",definition:"Two main routes: (1) Reductive amination: alpha-ketoglutarate + NH4+ -> glutamate (glutamate dehydrogenase). (2) GS-GOGAT: glutamine synthetase + glutamate synthase.",pathway:"Nitrogen assimilation",details:["Reductive amination: alpha-KG + NH4+ -> glutamate","Uses glutamate dehydrogenase","GS-GOGAT: two-enzyme system","Glutamine synthetase (GS): glutamate + NH4+ -> glutamine","Glutamate synthase (GOGAT): glutamine + alpha-KG -> 2 glutamate"],connections:["Transaminases","Amino acid synthesis","alpha-ketoglutarate"],examTip:"GS-GOGAT system works at low NH4+ concentrations"},
+{id:"c12-10",ch:"Ch 12",cat:"Amino Acids",term:"Transaminases",definition:"Transfer amino groups from one amino acid to a carbon skeleton (keto acid), creating a new amino acid. Key for amino acid interconversion.",pathway:"Amino acid synthesis",details:["Transfer -NH2 between molecules","Glutamate is most common amino donor","Requires pyridoxal phosphate (PLP, vitamin B6) cofactor","Creates new amino acids from keto acid precursors"],connections:["Amino acid synthesis","Glutamate","PLP"],examTip:"How cells make diverse amino acids from a few starting materials"},
+{id:"c12-11",ch:"Ch 12",cat:"Amino Acids",term:"Amino Acid Biosynthesis Families",definition:"Amino acids grouped by precursor metabolite origin: pyruvate family, 3PG family, PEP+E4P (aromatic), alpha-KG family (glutamate), OAA family (aspartate).",pathway:"Amino acid synthesis",details:["Pyruvate -> alanine, valine, leucine","3PG -> serine, glycine, cysteine","PEP + E4P -> Phe, Tyr, Trp (aromatic)","alpha-KG -> glutamate, glutamine, proline, arginine","OAA -> aspartate, asparagine, Met, Thr, Ile, Lys"],connections:["Precursor metabolites","Transaminases"],examTip:"Know which precursor metabolite leads to which amino acid family"},
+{id:"c12-12",ch:"Ch 12",cat:"Nucleotides",term:"Purine vs Pyrimidine Synthesis",definition:"Purines (A, G): ring built ON ribose-5-phosphate. Pyrimidines (C, T, U): ring built FIRST, then attached to ribose.",pathway:"Nucleotide synthesis",details:["Purines = Adenine, Guanine (2 rings)","Pyrimidines = Cytosine, Thymine, Uracil (1 ring)","Purine synthesis: build ring on R5P","Pyrimidine synthesis: build ring first, attach to R5P","Both require folic acid for one-carbon transfers"],connections:["Ribose-5P","Folic acid","Sulfa drugs"],examTip:"Purines built ON ribose vs pyrimidines built THEN attached"},
+{id:"c12-13",ch:"Ch 12",cat:"Nucleotides",term:"Folic Acid & Sulfa Drugs",definition:"Folic acid needed for one-carbon transfers in nucleotide synthesis. Sulfa drugs block folic acid synthesis (competitive inhibitors of PABA), starving bacteria of nucleotides.",pathway:"Nucleotide synthesis",details:["Folic acid = essential coenzyme for C1 transfers","Bacteria synthesize folic acid from PABA","Sulfa drugs mimic PABA structure","Competitive inhibition of dihydropteroate synthase","Humans get folic acid from diet (not affected)"],connections:["Competitive inhibition","PABA","Nucleotide synthesis"],examTip:"Classic competitive inhibition example - connects Ch 10 to Ch 12"},
+{id:"c12-14",ch:"Ch 12",cat:"Nucleotides",term:"Ribonucleotide Reductase",definition:"Converts ribonucleotides to deoxyribonucleotides (for DNA). Reduces the 2'-OH on ribose to 2'-H.",pathway:"Nucleotide synthesis",details:["Ribonucleotide -> deoxyribonucleotide","Essential for DNA synthesis","Reduces ribose sugar","Target for some anticancer drugs"],connections:["DNA synthesis","Ribose"],examTip:""},
+{id:"c12-15",ch:"Ch 12",cat:"Fatty Acids",term:"Fatty Acid Synthesis",definition:"Acetyl-CoA is the starting material. Fatty acid synthase adds 2C units to build palmitate (16C). Requires NADPH.",pathway:"Fatty acid synthesis",details:["Acetyl-CoA -> Malonyl-CoA -> fatty acid chain","Fatty acid synthase complex","Adds 2-carbon units from malonyl-CoA","Products: palmitate (C16)","Requires NADPH from PPP"],connections:["Acetyl-CoA","NADPH","PPP"],examTip:"Acetyl-CoA is THE precursor for fatty acids"},
+{id:"c12-16",ch:"Ch 12",cat:"Peptidoglycan",term:"Peptidoglycan Synthesis",definition:"NAM + NAG subunits. UTP required (UDP-NAM, UDP-NAG precursors). Transpeptidation cross-links peptides. Beta-lactams block transpeptidation.",pathway:"Cell wall synthesis",details:["NAM and NAG are monomers","UTP required for activation (UDP-NAM, UDP-NAG)","Transglycosylation links sugar backbone","Transpeptidation cross-links peptide chains","Beta-lactams (penicillin) block transpeptidase (PBP)"],connections:["UTP","Beta-lactams","PBP"],examTip:"Beta-lactams target transpeptidation - high-yield connection to antibiotics"},
+{id:"c12-17",ch:"Ch 12",cat:"Phosphorus",term:"Phosphorus Assimilation",definition:"Incorporated as inorganic phosphate (Pi). Used in ATP, nucleotides, phospholipids, LPS, teichoic acids.",pathway:"",details:["Taken up as inorganic phosphate","Incorporated into ATP, GTP, etc.","Component of phospholipid membranes","Component of nucleic acids (DNA/RNA)","Essential for energy metabolism"],connections:["ATP","Nucleotides","Phospholipids"],examTip:""},
+{id:"c12-18",ch:"Ch 12",cat:"Biosynthesis",term:"Anabolism Requirements",definition:"Four things needed: carbon skeletons (precursor metabolites), energy (ATP), reducing power (NADPH), and specific enzymes.",pathway:"",details:["Carbon skeletons from 12 precursor metabolites","Energy from ATP (and other NTPs)","Reducing power from NADPH","Enzymes catalyze each step","All provided by catabolic fueling reactions"],connections:["Precursor metabolites","ATP","NADPH"],examTip:"NADPH not NADH for biosynthesis"},
+{id:"c12-19",ch:"Ch 12",cat:"Precursor Metabolites",term:"G6P (Glucose-6-phosphate)",definition:"Precursor metabolite from EMP (step 1). Used for polysaccharide synthesis (glycogen, starch) and fed into PPP.",pathway:"EMP / PPP",details:["From hexokinase step of glycolysis","Starting point for PPP","Precursor for glucose-containing polymers","First precursor metabolite"],connections:["EMP","PPP","Polysaccharides"],examTip:"Feeds into PPP for NADPH production"},
+{id:"c12-20",ch:"Ch 12",cat:"Precursor Metabolites",term:"F6P (Fructose-6-phosphate)",definition:"Precursor metabolite from EMP (step 2). Used for peptidoglycan synthesis (NAM/NAG sugars).",pathway:"EMP",details:["From isomerase step of glycolysis","Precursor for NAM and NAG","Used in peptidoglycan synthesis","Requires UTP for activation"],connections:["Peptidoglycan","NAM","NAG"],examTip:""},
+{id:"c12-21",ch:"Ch 12",cat:"Precursor Metabolites",term:"3PG (3-Phosphoglycerate)",definition:"Precursor metabolite from EMP payoff phase. Starting material for serine family amino acids (serine, glycine, cysteine).",pathway:"EMP",details:["From lower glycolysis","Serine family precursor","Serine -> glycine -> cysteine","One-carbon metabolism starts here"],connections:["Serine","Glycine","Cysteine"],examTip:""},
+{id:"c12-22",ch:"Ch 12",cat:"Precursor Metabolites",term:"PEP (Phosphoenolpyruvate) as Precursor",definition:"Precursor metabolite from EMP. Combined with E4P from PPP to make aromatic amino acids (Phe, Tyr, Trp) via shikimate pathway.",pathway:"EMP",details:["Highest phosphate transfer potential","Precursor for aromatic amino acids","Combines with E4P from PPP","Shikimate pathway: PEP + E4P -> chorismate -> Phe, Tyr, Trp"],connections:["E4P","Aromatic amino acids","Shikimate pathway"],examTip:"PEP + E4P = aromatic amino acids is a key connection"},
+{id:"c12-23",ch:"Ch 12",cat:"Precursor Metabolites",term:"Pyruvate as Precursor",definition:"Precursor metabolite, end product of glycolysis. Starting material for alanine, valine, leucine biosynthesis.",pathway:"EMP",details:["Direct transamination gives alanine","Branched-chain amino acid precursor","Also feeds into transition reaction","Also feeds into fermentation products"],connections:["Alanine","Valine","Leucine","Acetyl-CoA"],examTip:""},
+{id:"c12-24",ch:"Ch 12",cat:"Precursor Metabolites",term:"Ribose-5-phosphate (R5P)",definition:"Precursor metabolite from PPP. Essential for nucleotide synthesis (both purines and pyrimidines).",pathway:"PPP",details:["From pentose phosphate pathway","Backbone of nucleotides","Purines built ON R5P","Pyrimidines attached to R5P after ring synthesis","Also in ATP, NAD+, FAD, CoA structure"],connections:["Nucleotide synthesis","Purines","Pyrimidines"],examTip:"Without R5P, no nucleotides = no DNA/RNA"},
+{id:"c12-25",ch:"Ch 12",cat:"Precursor Metabolites",term:"Erythrose-4-phosphate (E4P)",definition:"Precursor metabolite from PPP. Combines with PEP (from EMP) to make aromatic amino acids via shikimate pathway.",pathway:"PPP",details:["From non-oxidative phase of PPP","E4P + PEP -> shikimate pathway","Produces Phe, Tyr, Trp","Links PPP to amino acid synthesis"],connections:["PEP","Shikimate pathway","Aromatic amino acids"],examTip:"PPP provides E4P, EMP provides PEP - pathways work together"},
+{id:"c12-26",ch:"Ch 12",cat:"Precursor Metabolites",term:"Acetyl-CoA as Precursor",definition:"From transition reaction (pyruvate dehydrogenase). Starting material for fatty acid synthesis, enters TCA cycle.",pathway:"Transition / TCA",details:["Pyruvate -> Acetyl-CoA (irreversible)","Precursor for fatty acids (via fatty acid synthase)","Enters TCA cycle with OAA -> citrate","Central metabolic branch point"],connections:["Fatty acid synthesis","TCA cycle","Pyruvate"],examTip:"Cannot go back to pyruvate (irreversible)"},
+{id:"c12-27",ch:"Ch 12",cat:"Precursor Metabolites",term:"Alpha-ketoglutarate as Precursor",definition:"TCA cycle intermediate. Precursor for glutamate family amino acids: glutamate, glutamine, proline, arginine.",pathway:"TCA Cycle",details:["TCA intermediate","Reductive amination -> glutamate","Glutamate -> glutamine (glutamine synthetase)","Glutamate -> proline, arginine","Central nitrogen metabolism hub"],connections:["Glutamate","NH4+ incorporation","Transaminases"],examTip:"Central to nitrogen metabolism"},
+{id:"c12-28",ch:"Ch 12",cat:"Precursor Metabolites",term:"OAA (Oxaloacetate) as Precursor",definition:"TCA cycle intermediate. Precursor for aspartate family amino acids: aspartate, asparagine, methionine, threonine, isoleucine, lysine.",pathway:"TCA Cycle",details:["Transamination -> aspartate","Aspartate -> asparagine, Met, Thr, Ile, Lys","Also combines with Acetyl-CoA to start TCA","Anaplerotic reactions replenish OAA"],connections:["Aspartate","TCA cycle","Anaplerotic reactions"],examTip:"Large amino acid family branches from OAA via aspartate"},
+{id:"c12-29",ch:"Ch 12",cat:"Nitrogen",term:"Nitrification",definition:"Chemolithotrophic oxidation: NH4+ -> NO2- (Nitrosomonas) -> NO3- (Nitrobacter). Energy-generating process, not assimilatory.",pathway:"Chemolithotrophy",details:["NH4+ -> NO2- by Nitrosomonas","NO2- -> NO3- by Nitrobacter","Energy source for chemolithotrophs","Two separate organisms needed","Important in nitrogen cycle"],connections:["Chemolithotrophy","Nitrogen cycle"],examTip:"Nitrosomonas first (ammonium), Nitrobacter second (nitrite)"},
+{id:"c12-30",ch:"Ch 12",cat:"Fatty Acids",term:"Saturated vs Unsaturated Fatty Acids",definition:"Saturated: no double bonds (straight, packed tight). Unsaturated: has double bond(s) (kinked, more fluid membrane).",pathway:"Fatty acid synthesis",details:["Saturated = no double bonds = straight = rigid membrane","Unsaturated = double bond(s) = kinked = fluid membrane","Bacteria adjust ratio for membrane fluidity","Temperature affects which type is made"],connections:["Membrane fluidity","Fatty acid synthesis"],examTip:"Membrane fluidity regulation connects to adaptation"},
+{id:"c12-31",ch:"Ch 12",cat:"Precursor Metabolites",term:"Sedoheptulose-7-phosphate (S7P)",definition:"Precursor metabolite from the non-oxidative phase of PPP. Seven-carbon sugar intermediate.",pathway:"PPP",details:["7-carbon sugar phosphate","From non-oxidative PPP rearrangements","One of the 12 precursor metabolites","Part of sugar interconversion reactions"],connections:["PPP","Sugar rearrangements"],examTip:"Often forgotten precursor metabolite"},
+{id:"c12-32",ch:"Ch 12",cat:"Precursor Metabolites",term:"Ribulose-5-phosphate",definition:"Precursor metabolite produced in the oxidative phase of PPP. Converted to ribose-5P or other sugars in non-oxidative phase.",pathway:"PPP",details:["Product of oxidative phase of PPP","Isomerized to ribose-5P","Or epimerized to xylulose-5P","Gateway to non-oxidative PPP reactions"],connections:["PPP","R5P"],examTip:""},
+{id:"c11-31",ch:"Ch 11",cat:"TCA Cycle",term:"Citrate Synthase",definition:"First enzyme of TCA cycle. Catalyzes Acetyl-CoA + OAA -> Citrate. Irreversible, regulated step.",pathway:"TCA Cycle",details:["Acetyl-CoA + OAA -> Citrate","Irreversible reaction","Inhibited by ATP, NADH, citrate","Activated by ADP"],connections:["TCA cycle","Acetyl-CoA","OAA"],examTip:""},
+{id:"c11-32",ch:"Ch 11",cat:"TCA Cycle",term:"Isocitrate Dehydrogenase",definition:"TCA enzyme: Isocitrate -> alpha-ketoglutarate + CO2 + NADH. First oxidative decarboxylation in TCA. Regulated.",pathway:"TCA Cycle",details:["Isocitrate -> alpha-KG + CO2","Produces NADH","Rate-limiting step of TCA in some organisms","Inhibited by ATP, NADH"],connections:["alpha-ketoglutarate","NADH","CO2"],examTip:""},
+{id:"c11-33",ch:"Ch 11",cat:"TCA Cycle",term:"Alpha-ketoglutarate Dehydrogenase",definition:"TCA enzyme: alpha-KG -> Succinyl-CoA + CO2 + NADH. Similar mechanism to pyruvate dehydrogenase complex.",pathway:"TCA Cycle",details:["alpha-KG -> Succinyl-CoA + CO2","Produces NADH","Similar to pyruvate dehydrogenase","Second oxidative decarboxylation"],connections:["Succinyl-CoA","Pyruvate dehydrogenase"],examTip:""},
+{id:"c11-34",ch:"Ch 11",cat:"TCA Cycle",term:"Succinate Dehydrogenase",definition:"TCA enzyme: Succinate -> Fumarate + FADH2. Only enzyme embedded in membrane. Also Complex II of ETC. Uses FAD not NAD+.",pathway:"TCA Cycle / ETC",details:["Succinate -> Fumarate","Produces FADH2 (not NADH)","Embedded in inner membrane","Is ALSO Complex II of ETC","Only TCA enzyme in membrane"],connections:["FADH2","Complex II","ETC"],examTip:"Dual role: TCA enzyme AND ETC Complex II"},
+{id:"c11-35",ch:"Ch 11",cat:"ETC",term:"ETC Complexes (Eukaryotic)",definition:"Complex I (NADH dehydrogenase), Complex II (succinate dehydrogenase), CoQ, Complex III (cyt bc1), Cyt c, Complex IV (cyt oxidase), ATP synthase.",pathway:"ETC",details:["Complex I: NADH -> CoQ, pumps 4H+","Complex II: FADH2 -> CoQ, no proton pumping","Complex III: CoQ -> cyt c, pumps 4H+","Complex IV: cyt c -> O2 + H2O, pumps 2H+","ATP synthase: uses PMF to make ATP"],connections:["NADH","FADH2","PMF","O2"],examTip:"Know which complexes pump protons and which don't"},
+{id:"c11-36",ch:"Ch 11",cat:"ETC",term:"Prokaryotic ETC (Branched)",definition:"Prokaryotes have branched ETCs with multiple terminal oxidases. bo branch (high O2) and bd branch (low O2). More flexible than eukaryotic linear ETC.",pathway:"ETC",details:["Branched at CoQ level","bo branch: high O2, more efficient","bd branch: low O2, less efficient","Multiple terminal oxidases","Adaptable to different O2 levels"],connections:["Eukaryotic ETC","O2","Adaptation"],examTip:"Prokaryotic = branched, eukaryotic = linear"},
+{id:"c11-37",ch:"Ch 11",cat:"ATP Yield",term:"ATP Yield Breakdown",definition:"Glycolysis: 2 ATP + 2 NADH (=5). Transition: 2 NADH (=5). TCA: 2 GTP + 6 NADH + 2 FADH2 (=2+15+3=20). Total = 30+2SLP = ~32.",pathway:"Complete pathway",details:["Glycolysis: 2 ATP(SLP) + 2 NADH(5 ATP)","Transition: 2 NADH(5 ATP)","TCA: 2 GTP(SLP) + 6 NADH(15 ATP) + 2 FADH2(3 ATP)","SLP total: 4 ATP","OP total: 28 ATP","Grand total: ~32 ATP"],connections:["SLP","Oxidative phosphorylation"],examTip:"Be able to show the complete breakdown on the exam"},
+{id:"c11-38",ch:"Ch 11",cat:"Chemolithotrophy",term:"Nitrification Organisms",definition:"Nitrosomonas: NH4+ -> NO2- (ammonia oxidation). Nitrobacter: NO2- -> NO3- (nitrite oxidation). Two-step process, two organisms.",pathway:"Chemolithotrophy",details:["Nitrosomonas oxidizes ammonia to nitrite","Nitrobacter oxidizes nitrite to nitrate","Each uses the reaction for energy (chemolithotrophy)","Important in soil and water nitrogen cycling"],connections:["Nitrogen cycle","Chemolithotrophy"],examTip:"NitroSOmonas = first (S for start/ammonia)"},
+{id:"c12-33",ch:"Ch 12",cat:"CO2 Fixation",term:"Calvin Cycle Net Equation",definition:"3 CO2 + 9 ATP + 6 NADPH -> 1 G3P (glyceraldehyde-3-phosphate) + 9 ADP + 8 Pi + 6 NADP+",pathway:"Calvin Cycle",details:["3 turns of the cycle needed for 1 G3P output","3 CO2 fixed by RuBisCO","9 ATP consumed (6 in reduction + 3 in regeneration)","6 NADPH consumed in reduction phase"],connections:["RuBisCO","G3P","Autotrophy"],examTip:"Net equation is high-yield for exam"},
+{id:"c12-34",ch:"Ch 12",cat:"Nitrogen",term:"Nitrogenase Properties",definition:"Enzyme that fixes N2 -> NH4+. Extremely oxygen-sensitive (inactivated by O2). Requires 16 ATP per N2 fixed. Contains iron and molybdenum.",pathway:"Nitrogen fixation",details:["N2 + 8H+ + 8e- + 16 ATP -> 2 NH4+ + H2 + 16 ADP + 16 Pi","Irreversibly inactivated by O2","Contains Fe-Mo cofactor","Protected by: heterocysts (cyanobacteria), leghemoglobin (Rhizobium), rapid respiration"],connections:["Rhizobium","Cyanobacteria","O2 sensitivity"],examTip:"O2 sensitivity is why nitrogen fixation needs special conditions"},
+{id:"c12-35",ch:"Ch 12",cat:"Gluconeogenesis",term:"Gluconeogenesis Bypass Enzymes",definition:"Three irreversible glycolytic steps need bypass: (1) pyruvate kinase -> PEP carboxykinase, (2) PFK -> fructose bisphosphatase, (3) hexokinase -> glucose-6-phosphatase.",pathway:"Gluconeogenesis",details:["Pyruvate -> OAA -> PEP (PEP carboxykinase)","F1,6BP -> F6P (fructose bisphosphatase)","G6P -> glucose (glucose-6-phosphatase)","Other steps of glycolysis are reversible","Energetically expensive (uses ATP/GTP)"],connections:["Glycolysis","PFK1","Pyruvate kinase"],examTip:"Know which glycolytic enzyme each bypass replaces"},
+{id:"c12-36",ch:"Ch 12",cat:"Amino Acids",term:"Shikimate Pathway",definition:"PEP (from EMP) + E4P (from PPP) -> chorismate -> aromatic amino acids (Phe, Tyr, Trp). Target of glyphosate herbicide.",pathway:"Amino acid synthesis",details:["Combines PEP and E4P","Intermediate: chorismate","Branches to Phe, Tyr, and Trp","Only in plants and microorganisms","Target of glyphosate (Roundup)"],connections:["PEP","E4P","Aromatic amino acids"],examTip:"Connects EMP and PPP precursor metabolites"},
+{id:"c11-39",ch:"Ch 11",cat:"Fermentation",term:"Mixed Acid Fermentation",definition:"Produces a mix of acids: lactate, acetate, succinate, formate (-> H2 + CO2). Methyl Red positive. Done by E. coli.",pathway:"Fermentation",details:["Multiple acid products","Lowers pH significantly","Methyl Red test = positive","E. coli is classic example","Formate -> H2 + CO2 (gas)"],connections:["E. coli","MRVP tests","Butanediol fermentation"],examTip:"MR positive = mixed acid (E. coli). VP positive = butanediol (Klebsiella)"},
+{id:"c11-40",ch:"Ch 11",cat:"Fermentation",term:"Butanediol Fermentation",definition:"Produces 2,3-butanediol as major product. Less acid = pH stays higher. VP (Voges-Proskauer) positive. Done by Klebsiella, Enterobacter.",pathway:"Fermentation",details:["2,3-butanediol is neutral product","Less acid produced","VP test positive (acetoin intermediate)","Klebsiella, Enterobacter","Used for bacterial identification"],connections:["Klebsiella","MRVP tests","Mixed acid fermentation"],examTip:"VP positive organisms"},
+{id:"c11-41",ch:"Ch 11",cat:"Anaerobic Resp",term:"Sulfate Reduction",definition:"SO4(2-) used as terminal electron acceptor -> H2S. Done by Desulfovibrio. Produces hydrogen sulfide (rotten egg smell).",pathway:"Anaerobic respiration",details:["SO4(2-) -> H2S","Desulfovibrio is key genus","Produces H2S (toxic, smelly)","Important in anaerobic environments","Corrosion of pipes"],connections:["Anaerobic respiration","H2S"],examTip:""},
+{id:"c11-42",ch:"Ch 11",cat:"Anaerobic Resp",term:"Methanogenesis",definition:"CO2 used as terminal electron acceptor -> CH4 (methane). Done by methanogens (Archaea). Strictly anaerobic.",pathway:"Anaerobic respiration",details:["CO2 + H2 -> CH4 + H2O","Methanogens are Archaea","Strictly anaerobic","Found in gut, wetlands, landfills","Unique coenzymes"],connections:["Archaea","Anaerobic respiration","CO2"],examTip:"Archaea only - not bacteria"},
+{id:"c12-37",ch:"Ch 12",cat:"Precursor Metabolites",term:"Succinyl-CoA as Precursor",definition:"TCA intermediate. Precursor for porphyrin/heme synthesis. Sometimes listed as 13th precursor metabolite.",pathway:"TCA Cycle",details:["Precursor for porphyrin ring synthesis","Porphyrins -> heme -> cytochromes","TCA cycle intermediate","Between alpha-KG and succinate"],connections:["Heme","Cytochromes","TCA cycle"],examTip:""},
+{id:"c12-38",ch:"Ch 12",cat:"Nucleotides",term:"Purine Synthesis Details",definition:"Purines (A, G) are built directly on ribose-5-phosphate. Ring assembled one atom at a time using amino acids, CO2, and one-carbon units from folic acid.",pathway:"Nucleotide synthesis",details:["PRPP (phosphoribosyl pyrophosphate) is starting point","Ring built atom by atom on R5P","Requires glycine, glutamine, aspartate","One-carbon units from tetrahydrofolate (folic acid)","IMP is first complete purine -> AMP or GMP"],connections:["R5P","Folic acid","Amino acids"],examTip:"Built ON ribose (contrast with pyrimidines)"},
+{id:"c12-39",ch:"Ch 12",cat:"Nucleotides",term:"Pyrimidine Synthesis Details",definition:"Pyrimidines (C, U, T) ring is built FIRST as orotate, then attached to ribose-5-phosphate (as PRPP). Ring then modified to make UMP -> CTP or TMP.",pathway:"Nucleotide synthesis",details:["Ring assembled first (not on ribose)","Carbamoyl phosphate + aspartate -> ring","Orotate is key intermediate","Orotate + PRPP -> OMP -> UMP","UMP -> UTP -> CTP; or UMP -> dUMP -> TMP"],connections:["R5P","Folic acid","Aspartate"],examTip:"Ring FIRST, then attached to ribose (opposite of purines)"},
+{id:"c10-38",ch:"Ch 10",cat:"Energy",term:"Thermodynamics of Coupled Reactions",definition:"Exergonic reactions drive endergonic reactions when coupled. Overall delta-G must be negative for the coupled process to be spontaneous.",pathway:"",details:["ATP hydrolysis (-7.3 kcal) drives endergonic biosynthesis","Overall delta-G = sum of individual delta-Gs","Must be net negative for spontaneity","This is how cells do thermodynamically unfavorable work"],connections:["ATP","Exergonic","Endergonic"],examTip:"Coupling is how cells make unfavorable reactions happen"},
+{id:"c11-43",ch:"Ch 11",cat:"Glycolysis",term:"Hexokinase",definition:"First enzyme of glycolysis. Phosphorylates glucose -> G6P using 1 ATP. Traps glucose inside the cell (charged, can't cross membrane).",pathway:"Glycolysis",details:["Glucose + ATP -> G6P + ADP","Irreversible step","Traps glucose in cell","G6P is precursor metabolite","Investment phase enzyme"],connections:["G6P","ATP","Glycolysis"],examTip:""},
+{id:"c11-44",ch:"Ch 11",cat:"Glycolysis",term:"Pyruvate Kinase",definition:"Last enzyme of glycolysis. PEP -> Pyruvate + ATP (SLP). Irreversible. Regulated allosterically.",pathway:"Glycolysis",details:["PEP -> Pyruvate + ATP","Substrate-level phosphorylation","Irreversible (bypass needed in gluconeogenesis)","PEP has higher transfer potential than ATP"],connections:["PEP","Pyruvate","SLP","Gluconeogenesis"],examTip:"Bypass in gluconeogenesis = PEP carboxykinase"},
+{id:"c11-45",ch:"Ch 11",cat:"ETC",term:"ATP Synthase (F0F1 Complex)",definition:"Uses PMF to synthesize ATP. F0 = membrane channel (proton pore). F1 = catalytic head (makes ATP). Protons flow through, driving rotation.",pathway:"ETC",details:["F0 portion spans membrane (proton channel)","F1 portion in cytoplasm/matrix (catalytic)","Proton flow drives rotation of c-ring","Rotation drives conformational changes in F1","3 ATP made per full rotation (~10 H+)"],connections:["PMF","ETC","Oxidative phosphorylation"],examTip:"Rotary motor enzyme - mechanical coupling"},
+{id:"c11-46",ch:"Ch 11",cat:"Chemolithotrophy",term:"Reverse Electron Flow",definition:"Some chemolithotrophs must push electrons BACKWARDS (energetically uphill) to make NADH from donors with higher E'0 than NAD+. Requires PMF energy.",pathway:"Chemolithotrophy",details:["When electron donor has higher E'0 than NAD+/NADH","Must force electrons uphill to reduce NAD+","Requires energy from PMF","Makes chemolithotrophy less efficient","Example: iron oxidizers, nitrifiers"],connections:["PMF","E'0","NADH","Chemolithotrophy"],examTip:"Explains why chemolithotrophs grow slowly"},
+{id:"c11-47",ch:"Ch 11",cat:"Nutritional Types",term:"Chemolithoheterotroph",definition:"Chemical energy from inorganic compounds, but uses organic carbon source. Mixotrophic lifestyle.",pathway:"",details:["Energy: inorganic chemical oxidation","Carbon: organic molecules","Mix of litho and hetero","Less common nutritional type"],connections:["Chemolithoautotroph","Nutritional types"],examTip:""},
+{id:"c12-40",ch:"Ch 12",cat:"Biosynthesis",term:"NADPH vs NADH in Biosynthesis",definition:"NADPH is the reducing agent for anabolic reactions. NADH delivers electrons to ETC for energy. Different roles despite similar structure.",pathway:"",details:["NADPH = biosynthesis (anabolism)","NADH = ETC (energy/catabolism)","PPP is main source of NADPH","Extra phosphate on NADPH distinguishes it","Ensures separation of catabolic and anabolic electron flow"],connections:["PPP","ETC","Anabolism","Catabolism"],examTip:"Why PPP is essential: provides NADPH for all biosynthesis"},
+];
+
+// ===== PATHWAY DATABASE =====
+const PATHWAYS=[
+{id:"emp",name:"Embden-Meyerhof Pathway (Glycolysis)",chapter:"Ch 11",location:"Cytoplasm (all organisms)",
+steps:[
+  {substrate:"Glucose",product:"G6P",enzyme:"Hexokinase",energyChange:"-1 ATP",notes:"Phosphorylation traps glucose in cell",precursor:true},
+  {substrate:"G6P",product:"F6P",enzyme:"Phosphoglucose isomerase",energyChange:"--",notes:"Isomerization",precursor:true},
+  {substrate:"F6P",product:"F1,6BP",enzyme:"PFK1 (Pacemaker!)",energyChange:"-1 ATP",notes:"Committed step, key regulatory point"},
+  {substrate:"F1,6BP",product:"DHAP + G3P",enzyme:"Aldolase",energyChange:"--",notes:"Split into 2 three-carbon molecules",precursor:false},
+  {substrate:"DHAP",product:"G3P",enzyme:"Triose phosphate isomerase",energyChange:"--",notes:"DHAP converted to G3P (x2 G3P total)",precursor:true},
+  {substrate:"G3P",product:"1,3BPG",enzyme:"G3P dehydrogenase",energyChange:"+1 NADH (x2)",notes:"Oxidation + phosphorylation"},
+  {substrate:"1,3BPG",product:"3PG",enzyme:"Phosphoglycerate kinase",energyChange:"+1 ATP (x2) SLP",notes:"First ATP-generating step",precursor:true},
+  {substrate:"3PG",product:"2PG",enzyme:"Phosphoglycerate mutase",energyChange:"--",notes:"Phosphate group rearrangement"},
+  {substrate:"2PG",product:"PEP",enzyme:"Enolase",energyChange:"--",notes:"Dehydration, creates high-energy PEP",precursor:true},
+  {substrate:"PEP",product:"Pyruvate",enzyme:"Pyruvate kinase",energyChange:"+1 ATP (x2) SLP",notes:"Highest phosphate transfer potential -> ATP",precursor:true}
+],
+netYield:{atp:2,nadh:2,nadph:0,fadh2:0,co2:0},
+precursorMetabolites:["G6P","F6P","G3P","3PG","PEP","Pyruvate"],
+organisms:"Most bacteria, archaea, eukaryotes",
+significance:"Most common glycolytic pathway. Produces 6 of 12 precursor metabolites."},
+
+{id:"ed",name:"Entner-Doudoroff Pathway (ED)",chapter:"Ch 11",location:"Cytoplasm",
+steps:[
+  {substrate:"Glucose",product:"G6P",enzyme:"Hexokinase",energyChange:"-1 ATP",notes:"Same first step as EMP",precursor:true},
+  {substrate:"G6P",product:"6-Phosphogluconate",enzyme:"G6P dehydrogenase",energyChange:"+1 NADPH",notes:"Oxidation produces NADPH"},
+  {substrate:"6-Phosphogluconate",product:"KDPG",enzyme:"6PG dehydratase",energyChange:"--",notes:"Unique ED intermediate (2-keto-3-deoxy-6-phosphogluconate)"},
+  {substrate:"KDPG",product:"Pyruvate + G3P",enzyme:"KDPG aldolase",energyChange:"--",notes:"Splits into pyruvate directly + G3P",precursor:true},
+  {substrate:"G3P",product:"Pyruvate",enzyme:"(via lower EMP)",energyChange:"+1 ATP + 1 NADH",notes:"G3P enters lower half of EMP",precursor:true}
+],
+netYield:{atp:1,nadh:1,nadph:1,fadh2:0,co2:0},
+precursorMetabolites:["G6P","G3P","Pyruvate"],
+organisms:"Some Gram-negative bacteria (Pseudomonas, Rhizobium, Agrobacterium)",
+significance:"Uses fewer enzymes than EMP. Produces NADPH. Half the ATP of EMP."},
+
+{id:"ppp",name:"Pentose Phosphate Pathway (PPP/HMP Shunt)",chapter:"Ch 11",location:"Cytoplasm",
+steps:[
+  {substrate:"G6P",product:"6-Phosphogluconate",enzyme:"G6P dehydrogenase",energyChange:"+1 NADPH",notes:"Oxidative phase begins",precursor:true},
+  {substrate:"6-Phosphogluconate",product:"Ribulose-5P",enzyme:"6PG dehydrogenase",energyChange:"+1 NADPH + 1 CO2",notes:"Decarboxylation, second NADPH",precursor:true},
+  {substrate:"Ribulose-5P",product:"Ribose-5P",enzyme:"Isomerase",energyChange:"--",notes:"For nucleotide synthesis",precursor:true},
+  {substrate:"Ribulose-5P",product:"Xylulose-5P",enzyme:"Epimerase",energyChange:"--",notes:"Non-oxidative rearrangements begin"},
+  {substrate:"R5P + Xu5P",product:"S7P + G3P",enzyme:"Transketolase",energyChange:"--",notes:"Sugar rearrangement",precursor:true},
+  {substrate:"S7P + G3P",product:"E4P + F6P",enzyme:"Transaldolase",energyChange:"--",notes:"Produces E4P for aromatic AAs",precursor:true}
+],
+netYield:{atp:0,nadh:0,nadph:2,fadh2:0,co2:1},
+precursorMetabolites:["Ribulose-5P","Ribose-5P","Erythrose-4P","Sedoheptulose-7P"],
+organisms:"All organisms",
+significance:"Main source of NADPH for biosynthesis. Provides R5P for nucleotides. Runs simultaneously with EMP."},
+
+{id:"tca",name:"TCA Cycle (Krebs / Citric Acid Cycle)",chapter:"Ch 11",location:"Mitochondrial matrix (euk) / Cytoplasm (prok)",
+steps:[
+  {substrate:"Acetyl-CoA + OAA",product:"Citrate",enzyme:"Citrate synthase",energyChange:"--",notes:"Condensation reaction, irreversible",precursor:true},
+  {substrate:"Citrate",product:"Isocitrate",enzyme:"Aconitase",energyChange:"--",notes:"Isomerization (via cis-aconitate)"},
+  {substrate:"Isocitrate",product:"alpha-Ketoglutarate",enzyme:"Isocitrate dehydrogenase",energyChange:"+1 NADH + 1 CO2",notes:"First oxidative decarboxylation",precursor:true},
+  {substrate:"alpha-KG",product:"Succinyl-CoA",enzyme:"alpha-KG dehydrogenase",energyChange:"+1 NADH + 1 CO2",notes:"Second oxidative decarboxylation",precursor:true},
+  {substrate:"Succinyl-CoA",product:"Succinate",enzyme:"Succinyl-CoA synthetase",energyChange:"+1 GTP (SLP)",notes:"Substrate-level phosphorylation"},
+  {substrate:"Succinate",product:"Fumarate",enzyme:"Succinate dehydrogenase",energyChange:"+1 FADH2",notes:"Also Complex II of ETC! Only membrane enzyme"},
+  {substrate:"Fumarate",product:"Malate",enzyme:"Fumarase",energyChange:"--",notes:"Hydration"},
+  {substrate:"Malate",product:"OAA",enzyme:"Malate dehydrogenase",energyChange:"+1 NADH",notes:"Regenerates OAA to restart cycle",precursor:true}
+],
+netYield:{atp:0,nadh:3,nadph:0,fadh2:1,co2:2,gtp:1},
+precursorMetabolites:["Acetyl-CoA","alpha-Ketoglutarate","Succinyl-CoA","OAA"],
+organisms:"All aerobic organisms",
+significance:"Amphibolic: both catabolic (energy) and anabolic (precursor metabolites). Per glucose: x2 everything."},
+
+{id:"transition",name:"Transition Reaction (Pyruvate -> Acetyl-CoA)",chapter:"Ch 11",location:"Mitochondrial matrix (euk) / Cytoplasm (prok)",
+steps:[
+  {substrate:"Pyruvate",product:"Acetyl-CoA",enzyme:"Pyruvate dehydrogenase complex",energyChange:"+1 NADH + 1 CO2",notes:"IRREVERSIBLE! Links glycolysis to TCA. Per glucose: x2.",precursor:true}
+],
+netYield:{atp:0,nadh:1,nadph:0,fadh2:0,co2:1},
+precursorMetabolites:["Acetyl-CoA"],
+organisms:"All organisms using TCA",
+significance:"Irreversible decarboxylation. Cannot make glucose from Acetyl-CoA. Per glucose: 2 NADH, 2 CO2."},
+
+{id:"calvin",name:"Calvin-Benson Cycle (CO2 Fixation)",chapter:"Ch 12",location:"Carboxysomes (prok) / Chloroplast stroma (euk)",
+steps:[
+  {substrate:"3 CO2 + 3 RuBP",product:"6x 3PG",enzyme:"RuBisCO",energyChange:"--",notes:"FIXATION phase: CO2 attached to RuBP"},
+  {substrate:"6x 3PG",product:"6x 1,3BPG",enzyme:"Phosphoglycerate kinase",energyChange:"-6 ATP",notes:"REDUCTION phase begins"},
+  {substrate:"6x 1,3BPG",product:"6x G3P",enzyme:"G3P dehydrogenase",energyChange:"-6 NADPH",notes:"Reduction to G3P"},
+  {substrate:"5x G3P",product:"3x RuBP",enzyme:"Multiple enzymes",energyChange:"-3 ATP",notes:"REGENERATION phase: 5 G3P -> 3 RuBP"},
+  {substrate:"1x G3P",product:"Net output",enzyme:"--",energyChange:"--",notes:"NET: 1 G3P per 3 CO2 fixed"}
+],
+netYield:{atp:-9,nadh:0,nadph:-6,fadh2:0,co2:-3},
+precursorMetabolites:["G3P"],
+organisms:"Photolithoautotrophs, some chemolithoautotrophs",
+significance:"Primary CO2 fixation pathway. 3 CO2 + 9 ATP + 6 NADPH -> 1 G3P."},
+
+{id:"etc",name:"Electron Transport Chain & Oxidative Phosphorylation",chapter:"Ch 11",location:"IMM (euk) / Cell membrane (prok)",
+steps:[
+  {substrate:"NADH",product:"NAD+ + H+",enzyme:"Complex I (NADH dehydrogenase)",energyChange:"Pumps 4 H+",notes:"FMN + Fe-S clusters. Transfers to CoQ"},
+  {substrate:"FADH2",product:"FAD",enzyme:"Complex II (Succinate DH)",energyChange:"No H+ pumped",notes:"Enters at CoQ level, bypasses Complex I"},
+  {substrate:"CoQH2",product:"CoQ",enzyme:"Complex III (cyt bc1)",energyChange:"Pumps 4 H+",notes:"Q cycle. Transfers to cytochrome c"},
+  {substrate:"Cyt c (reduced)",product:"Cyt c (oxidized)",enzyme:"Complex IV (cyt oxidase)",energyChange:"Pumps 2 H+",notes:"Final transfer to O2 -> H2O"},
+  {substrate:"H+ gradient",product:"ATP",enzyme:"ATP synthase (F0F1)",energyChange:"+~2.5 ATP/NADH, +~1.5 ATP/FADH2",notes:"PMF drives rotary motor to make ATP"}
+],
+netYield:{atp:0,nadh:0,nadph:0,fadh2:0,co2:0},
+precursorMetabolites:[],
+organisms:"All respiring organisms",
+significance:"Produces most ATP (~28 of 32). Creates PMF for ATP synthesis, flagella, transport, reverse electron flow."}
+];
+
+// ===== QUIZ DATABASE =====
+const QUIZ=[
+{q:"What is the NET ATP yield of the Embden-Meyerhof pathway (glycolysis)?",opts:["1 ATP","2 ATP","4 ATP","6 ATP"],ans:1,ch:"Ch 11",exp:"Glycolysis invests 2 ATP and produces 4 ATP for a NET yield of 2 ATP by SLP."},
+{q:"Which enzyme is the pacemaker (rate-limiting) enzyme of glycolysis?",opts:["Hexokinase","Pyruvate kinase","PFK1 (phosphofructokinase-1)","Aldolase"],ans:2,ch:"Ch 11",exp:"PFK1 catalyzes the irreversible committed step F6P -> F1,6BP and is allosterically regulated."},
+{q:"PEP has a _____ phosphate transfer potential than ATP.",opts:["Lower","Equal","Higher","Variable"],ans:2,ch:"Ch 10",exp:"PEP has higher phosphate transfer potential, allowing it to donate phosphate to ADP to make ATP."},
+{q:"How many of the 12 precursor metabolites come from glycolysis (EMP)?",opts:["3","4","6","8"],ans:2,ch:"Ch 11",exp:"G6P, F6P, G3P, 3PG, PEP, and Pyruvate - six precursor metabolites from EMP."},
+{q:"What is the net yield of the Entner-Doudoroff pathway?",opts:["2 ATP, 2 NADH","1 ATP, 1 NADH, 1 NADPH","1 ATP, 2 NADH","2 ATP, 1 NADPH"],ans:1,ch:"Ch 11",exp:"ED pathway yields only 1 ATP (half of EMP) but also produces 1 NADPH."},
+{q:"Which pathway is the primary source of NADPH for biosynthesis?",opts:["Glycolysis (EMP)","TCA cycle","Pentose Phosphate Pathway (PPP)","ETC"],ans:2,ch:"Ch 11",exp:"PPP produces NADPH in its oxidative phase. NADPH is used for anabolic reactions."},
+{q:"The transition reaction (pyruvate -> acetyl-CoA) is:",opts:["Reversible","Irreversible","Only in eukaryotes","ATP-generating"],ans:1,ch:"Ch 11",exp:"The transition reaction is IRREVERSIBLE, which is why you cannot make glucose from acetyl-CoA."},
+{q:"Per ONE turn of the TCA cycle, how many NADH are produced?",opts:["1","2","3","4"],ans:2,ch:"Ch 11",exp:"3 NADH per turn: isocitrate DH, alpha-KG DH, and malate DH. Per glucose (2 turns) = 6 NADH."},
+{q:"Which TCA cycle enzyme is ALSO Complex II of the ETC?",opts:["Citrate synthase","Isocitrate dehydrogenase","Succinate dehydrogenase","Malate dehydrogenase"],ans:2,ch:"Ch 11",exp:"Succinate dehydrogenase is the only membrane-bound TCA enzyme and doubles as ETC Complex II."},
+{q:"NADH yields approximately how many ATP via oxidative phosphorylation?",opts:["1.0","1.5","2.5","3.5"],ans:2,ch:"Ch 11",exp:"NADH enters at Complex I and yields ~2.5 ATP. FADH2 enters at CoQ and yields ~1.5 ATP."},
+{q:"What is the approximate TOTAL ATP yield from aerobic respiration of one glucose?",opts:["24 ATP","28 ATP","32 ATP","40 ATP"],ans:2,ch:"Ch 11",exp:"~32 ATP: 4 from SLP + 25 from 10 NADH + 3 from 2 FADH2. Prokaryotes may get up to ~38."},
+{q:"In fermentation, the purpose of reducing pyruvate to ethanol or lactate is to:",opts:["Generate ATP","Regenerate NAD+","Produce CO2","Feed the TCA cycle"],ans:1,ch:"Ch 11",exp:"Fermentation regenerates NAD+ so glycolysis can continue. Without NAD+, glycolysis stops."},
+{q:"Which uses an electron transport chain?",opts:["Fermentation only","Both fermentation and respiration","Respiration only (aerobic and anaerobic)","Only aerobic respiration"],ans:2,ch:"Ch 11",exp:"Both aerobic AND anaerobic respiration use an ETC. Fermentation does NOT use an ETC."},
+{q:"What is the terminal electron acceptor in aerobic respiration?",opts:["NAD+","FAD","O2","NO3-"],ans:2,ch:"Ch 11",exp:"O2 is reduced to H2O at Complex IV. Anaerobic respiration uses other acceptors like NO3-, SO4(2-)."},
+{q:"Denitrification (NO3- -> N2) is an example of:",opts:["Assimilatory nitrate reduction","Dissimilatory nitrate reduction","Nitrogen fixation","Nitrification"],ans:1,ch:"Ch 11",exp:"Dissimilatory = catabolic, for energy. NO3- serves as terminal electron acceptor."},
+{q:"Sulfa drugs work by:",opts:["Inhibiting DNA gyrase","Competitive inhibition of PABA in folic acid synthesis","Blocking transpeptidation","Inhibiting 30S ribosome"],ans:1,ch:"Ch 10",exp:"Sulfa drugs structurally mimic PABA and competitively inhibit folic acid synthesis, blocking nucleotide production."},
+{q:"A prosthetic group differs from a coenzyme because it is:",opts:["Made of protein","Permanently attached to the enzyme","Always a metal ion","Loosely associated"],ans:1,ch:"Ch 10",exp:"Prosthetic groups are permanently attached (e.g., FAD, FMN, heme). Coenzymes are loosely attached and recyclable (e.g., NADH, CoA)."},
+{q:"Which electron carrier transfers only 1 electron and contains iron in a heme group?",opts:["NADH","FAD","Cytochromes","Iron-sulfur proteins"],ans:2,ch:"Ch 10",exp:"Cytochromes carry 1e- via iron IN heme. Iron-sulfur proteins also carry 1e- but iron is NOT in heme."},
+{q:"In the Nernst equation delta-G = -nF(delta-E'0), F equals:",opts:["23 kcal/volt-equiv","96.5 J/volt-equiv","7.3 kcal/mol","30.5 kJ/mol"],ans:0,ch:"Ch 10",exp:"F (Faraday constant) = 23 kcal/volt-equivalent = 96.5 kJ/volt-equivalent."},
+{q:"The proton motive force (PMF) is used for all EXCEPT:",opts:["ATP synthesis","Flagellar rotation","Active transport","Substrate-level phosphorylation"],ans:3,ch:"Ch 11",exp:"PMF drives ATP synthase, flagella, active transport, and reverse electron flow. SLP is direct phosphate transfer, no PMF needed."},
+{q:"Which NTP is required for peptidoglycan synthesis (UDP-NAM, UDP-NAG)?",opts:["ATP","GTP","CTP","UTP"],ans:3,ch:"Ch 10",exp:"UTP activates NAM and NAG as UDP-NAM and UDP-NAG for peptidoglycan synthesis."},
+{q:"RuBisCO in prokaryotes is located in:",opts:["Thylakoids","Carboxysomes","Mitochondria","Periplasm"],ans:1,ch:"Ch 12",exp:"RuBisCO is in carboxysomes in prokaryotes and chloroplast stroma in eukaryotes."},
+{q:"The net equation for the Calvin cycle to produce 1 G3P is:",opts:["1 CO2 + 3 ATP + 2 NADPH","3 CO2 + 9 ATP + 6 NADPH","6 CO2 + 18 ATP + 12 NADPH","3 CO2 + 6 ATP + 6 NADPH"],ans:1,ch:"Ch 12",exp:"3 CO2 + 9 ATP + 6 NADPH -> 1 G3P (glyceraldehyde-3-phosphate)."},
+{q:"Nitrogenase is inactivated by:",opts:["Water","Oxygen (O2)","High pH","Glucose"],ans:1,ch:"Ch 12",exp:"Nitrogenase is irreversibly inactivated by O2. Protected by heterocysts, leghemoglobin, or rapid respiration."},
+{q:"Which precursor metabolite is used for nucleotide synthesis?",opts:["PEP","Pyruvate","Ribose-5-phosphate","OAA"],ans:2,ch:"Ch 12",exp:"R5P from the PPP is the sugar backbone of all nucleotides (purines and pyrimidines)."},
+{q:"Anaplerotic reactions serve to:",opts:["Break down glucose faster","Replenish TCA cycle intermediates pulled for biosynthesis","Generate NADPH","Fix nitrogen"],ans:1,ch:"Ch 12",exp:"When TCA intermediates are used as precursor metabolites for biosynthesis, anaplerotic reactions refill them."},
+{q:"Purines differ from pyrimidines in synthesis because purines are:",opts:["Built first then attached to ribose","Built directly on ribose-5-phosphate","Made from aspartate only","Not dependent on folic acid"],ans:1,ch:"Ch 12",exp:"Purines are built atom by atom ON R5P. Pyrimidines: ring built FIRST, then attached to R5P."},
+{q:"In gluconeogenesis, which enzyme bypasses PFK1?",opts:["PEP carboxykinase","Fructose bisphosphatase","Glucose-6-phosphatase","Pyruvate carboxylase"],ans:1,ch:"Ch 12",exp:"Fructose bisphosphatase converts F1,6BP -> F6P, bypassing the irreversible PFK1 step."},
+{q:"Which organism performs nitrogen fixation in legume root nodules?",opts:["Nitrosomonas","Nitrobacter","Rhizobium","Pseudomonas"],ans:2,ch:"Ch 12",exp:"Rhizobium lives symbiotically in legume root nodules and fixes N2 -> NH4+ using nitrogenase."},
+{q:"Acetyl-CoA is the precursor metabolite for synthesis of:",opts:["Nucleotides","Aromatic amino acids","Fatty acids","Peptidoglycan"],ans:2,ch:"Ch 12",exp:"Acetyl-CoA is the starting material for fatty acid synthesis via fatty acid synthase."},
+{q:"A chemoorganoheterotroph obtains energy from _____ and carbon from _____.",opts:["Light; CO2","Inorganic chemicals; CO2","Organic chemicals; organic molecules","Light; organic molecules"],ans:2,ch:"Ch 11",exp:"Chemoorganoheterotrophs use organic molecules for both energy and carbon. Most pathogens are this type."},
+{q:"Allosteric regulation differs from competitive inhibition because allosteric effectors:",opts:["Bind the active site","Are always inhibitory","Bind a site other than the active site","Cannot be reversed"],ans:2,ch:"Ch 10",exp:"Allosteric effectors bind at a separate allosteric site, causing conformational change. Can be positive or negative."},
+{q:"Feedback (end-product) inhibition involves:",opts:["The substrate activating the first enzyme","The end product inhibiting the first enzyme of the pathway","ATP always being the inhibitor","Irreversible enzyme inactivation"],ans:1,ch:"Ch 10",exp:"End product inhibits the first committed step, preventing overproduction. The seesaw of metabolism."},
+{q:"Which type of fermentation is Voges-Proskauer (VP) positive?",opts:["Ethanol fermentation","Lactic acid fermentation","Mixed acid fermentation","Butanediol fermentation"],ans:3,ch:"Ch 11",exp:"Butanediol fermentation (Klebsiella, Enterobacter) is VP positive. Mixed acid (E. coli) is MR positive."},
+{q:"The PPP runs _____ with EMP in most organisms.",opts:["Instead of","After","Before","Simultaneously"],ans:3,ch:"Ch 11",exp:"PPP runs simultaneously alongside EMP (or ED), providing NADPH and precursor metabolites."},
+{q:"GTP is specifically used in the biosynthesis of:",opts:["Lipids","Proteins","Peptidoglycan","Nucleotides"],ans:1,ch:"Ch 10",exp:"GTP is used in protein synthesis (translation). CTP for lipids, UTP for peptidoglycan."},
+{q:"Which of these electron carriers is lipid-soluble and embedded in the membrane?",opts:["NADH","Cytochrome c","Coenzyme Q (ubiquinone)","Ferredoxin"],ans:2,ch:"Ch 10",exp:"CoQ/ubiquinone is lipid-soluble, moves within the membrane between Complex I/II and Complex III."},
+{q:"The ED pathway is used primarily by:",opts:["All bacteria","Some Gram-negative bacteria","Only eukaryotes","Only archaea"],ans:1,ch:"Ch 11",exp:"The ED pathway is found in some Gram-negative bacteria like Pseudomonas and Rhizobium."},
+{q:"Reverse electron flow is needed when:",opts:["O2 is absent","Electron donor has higher E'0 than NAD+","ATP levels are too high","The cell is fermenting"],ans:1,ch:"Ch 11",exp:"Some chemolithotrophs must push electrons uphill (against thermodynamic gradient) to reduce NAD+, using PMF energy."},
+{q:"Beta-lactam antibiotics target which step of peptidoglycan synthesis?",opts:["UDP-NAM formation","Transglycosylation","Transpeptidation","Autolysis"],ans:2,ch:"Ch 12",exp:"Beta-lactams (penicillin) inhibit transpeptidase (PBP), blocking cross-linking of peptidoglycan."},
+{q:"LDH having 5 isoenzymes demonstrates the concept of:",opts:["Competitive inhibition","Feedback inhibition","Isoenzymes doing the same reaction with different regulation","Covalent modification"],ans:2,ch:"Ch 10",exp:"Isoenzymes catalyze the same reaction but have different regulatory properties and tissue distributions."},
+{q:"Which of the following is NOT a use of PMF?",opts:["Flagellar rotation","Reverse electron flow","Substrate-level phosphorylation","Active transport"],ans:2,ch:"Ch 11",exp:"SLP is direct phosphate transfer from substrate to ADP. It does not require PMF."},
+{q:"Methanogens use _____ as terminal electron acceptor.",opts:["O2","NO3-","SO4(2-)","CO2"],ans:3,ch:"Ch 11",exp:"Methanogens (Archaea) reduce CO2 to CH4 (methane) in anaerobic respiration."},
+{q:"The GS-GOGAT system incorporates _____ into organic molecules.",opts:["CO2","NH4+ (ammonium)","SO4(2-)","PO4(3-)"],ans:1,ch:"Ch 12",exp:"GS (glutamine synthetase) + GOGAT (glutamate synthase) incorporate NH4+ into glutamate for amino acid synthesis."},
+{q:"Transaminases require which vitamin as a cofactor?",opts:["Vitamin C","Vitamin B12","Vitamin B6 (pyridoxal phosphate)","Folic acid"],ans:2,ch:"Ch 12",exp:"Transaminases use PLP (pyridoxal phosphate, vitamin B6) to transfer amino groups between molecules."},
+{q:"Erythrose-4-phosphate (E4P) from PPP combines with _____ from EMP to make aromatic amino acids.",opts:["Pyruvate","G6P","PEP","3PG"],ans:2,ch:"Ch 12",exp:"E4P (PPP) + PEP (EMP) enter the shikimate pathway to produce Phe, Tyr, Trp."},
+{q:"Ribonucleotide reductase converts:",opts:["Purines to pyrimidines","Ribonucleotides to deoxyribonucleotides","DNA to RNA","AMP to ATP"],ans:1,ch:"Ch 12",exp:"Ribonucleotide reductase reduces the 2'-OH on ribose to make deoxyribonucleotides for DNA synthesis."},
+];
+
+// ===== COMPARISON DATABASE =====
+const COMPARISONS=[
+{id:"emp-vs-ed",a:"EMP (Glycolysis)",b:"ED Pathway",rows:[
+  {label:"Net ATP","a":"2 ATP","b":"1 ATP"},
+  {label:"NADH","a":"2 NADH","b":"1 NADH"},
+  {label:"NADPH","a":"0","b":"1 NADPH"},
+  {label:"Key Intermediate","a":"F1,6BP","b":"KDPG"},
+  {label:"Pacemaker","a":"PFK1","b":"No equivalent"},
+  {label:"# Enzymes","a":"10","b":"4 unique + shared with EMP"},
+  {label:"Organisms","a":"Most bacteria, archaea, eukaryotes","b":"Some Gram-negatives (Pseudomonas, Rhizobium)"},
+  {label:"Precursor Metabolites","a":"G6P, F6P, G3P, 3PG, PEP, Pyruvate","b":"G6P, G3P, Pyruvate"},
+  {label:"Significance","a":"Most common glycolytic pathway","b":"Fewer enzymes, provides NADPH"}
+]},
+{id:"emp-vs-ppp",a:"EMP (Glycolysis)",b:"PPP (HMP Shunt)",rows:[
+  {label:"ATP Yield","a":"2 ATP (SLP)","b":"0 ATP directly"},
+  {label:"NADPH","a":"0","b":"2 NADPH per G6P"},
+  {label:"Primary Purpose","a":"Energy (ATP) + precursors","b":"NADPH for biosynthesis + precursors"},
+  {label:"Key Products","a":"Pyruvate, ATP, NADH","b":"NADPH, R5P, E4P, S7P"},
+  {label:"Runs When","a":"Always (glucose available)","b":"Simultaneously with EMP"},
+  {label:"Precursor Metabolites","a":"G6P, F6P, G3P, 3PG, PEP, Pyruvate","b":"Ribulose-5P, R5P, E4P, S7P"},
+  {label:"Organisms","a":"Nearly all","b":"All organisms"}
+]},
+{id:"aerobic-vs-anaerobic",a:"Aerobic Respiration",b:"Anaerobic Respiration",rows:[
+  {label:"Terminal e- Acceptor","a":"O2","b":"NO3-, SO4(2-), CO2, Fe3+, fumarate"},
+  {label:"ATP Yield","a":"~32 per glucose","b":"Less than aerobic"},
+  {label:"Uses ETC","a":"Yes","b":"Yes"},
+  {label:"Uses SLP","a":"Yes","b":"Yes"},
+  {label:"Delta-E'0","a":"Large (O2 = +0.82V)","b":"Smaller (lower E'0 acceptors)"},
+  {label:"Organisms","a":"Aerobes, facultative anaerobes","b":"Anaerobes, some facultatives"},
+  {label:"Example","a":"Most eukaryotes, many bacteria","b":"Pseudomonas (NO3-), Desulfovibrio (SO4(2-))"}
+]},
+{id:"respiration-vs-fermentation",a:"Respiration",b:"Fermentation",rows:[
+  {label:"ETC Used","a":"Yes","b":"No"},
+  {label:"External e- Acceptor","a":"Yes (O2 or other)","b":"No (organic molecule is both donor + acceptor)"},
+  {label:"ATP Source","a":"SLP + Oxidative Phosphorylation","b":"SLP only (glycolysis)"},
+  {label:"ATP Yield","a":"~32 (aerobic) or less (anaerobic)","b":"2 ATP only"},
+  {label:"NADH Fate","a":"Donated to ETC","b":"Used to reduce pyruvate (regenerate NAD+)"},
+  {label:"Products","a":"CO2, H2O","b":"Ethanol + CO2, Lactate, Mixed acids, etc."},
+  {label:"Efficiency","a":"High (captures ~40% of glucose energy)","b":"Low (~2% of glucose energy)"},
+  {label:"Why Less ATP","a":"N/A","b":"NADH energy wasted reducing organic acceptor"}
+]},
+{id:"slp-vs-op",a:"Substrate-Level Phosphorylation",b:"Oxidative Phosphorylation",rows:[
+  {label:"Mechanism","a":"Direct transfer of phosphate from substrate to ADP","b":"ATP synthase driven by PMF from ETC"},
+  {label:"Requires ETC","a":"No","b":"Yes"},
+  {label:"Requires O2","a":"No","b":"Only in aerobic (not anaerobic resp)"},
+  {label:"Where Occurs","a":"Glycolysis (2 sites) + TCA (1 GTP)","b":"Inner membrane (euk) / Cell membrane (prok)"},
+  {label:"ATP per Glucose","a":"4 ATP","b":"~28 ATP"},
+  {label:"Example Enzymes","a":"PG kinase, Pyruvate kinase, Succinyl-CoA synthetase","b":"ATP synthase (F0F1)"},
+  {label:"Used in Fermentation","a":"Yes (only source)","b":"No"}
+]},
+{id:"competitive-vs-noncompetitive",a:"Competitive Inhibition",b:"Noncompetitive (Allosteric) Inhibition",rows:[
+  {label:"Binding Site","a":"Active site","b":"Allosteric site (different from active site)"},
+  {label:"Mechanism","a":"Competes with substrate for active site","b":"Changes enzyme shape, distorts active site"},
+  {label:"Overcome by [S]","a":"Yes (increase substrate concentration)","b":"No"},
+  {label:"Effect on Km","a":"Increases apparent Km","b":"No change in Km"},
+  {label:"Effect on Vmax","a":"Vmax unchanged (at infinite [S])","b":"Decreases Vmax"},
+  {label:"Example","a":"Sulfa drugs competing with PABA","b":"Heavy metals, feedback inhibition"},
+  {label:"Reversibility","a":"Reversible","b":"Usually reversible"}
+]},
+{id:"prok-vs-euk-etc",a:"Prokaryotic ETC",b:"Eukaryotic ETC",rows:[
+  {label:"Location","a":"Cell (plasma) membrane","b":"Inner mitochondrial membrane (IMM)"},
+  {label:"Structure","a":"Branched (bo and bd branches)","b":"Linear"},
+  {label:"Flexibility","a":"Multiple terminal oxidases","b":"Only cytochrome c oxidase (Complex IV)"},
+  {label:"Adaptability","a":"Adapts to different O2 levels","b":"Fixed pathway"},
+  {label:"ATP Yield","a":"Up to ~38 per glucose","b":"~32 per glucose"},
+  {label:"Why Yield Differs","a":"No shuttle cost (no mitochondrial membrane to cross)","b":"NADH shuttle from cytoplasm costs ~2 ATP"},
+  {label:"Terminal Oxidases","a":"bo (high O2), bd (low O2)","b":"Complex IV only"}
+]},
+{id:"assim-vs-dissim",a:"Assimilatory Nitrate Reduction",b:"Dissimilatory Nitrate Reduction",rows:[
+  {label:"Purpose","a":"Anabolic (building amino acids)","b":"Catabolic (energy generation)"},
+  {label:"Pathway","a":"NO3- -> NO2- -> NH4+","b":"NO3- -> NO2- -> N2 (denitrification)"},
+  {label:"End Product","a":"NH4+ (incorporated into amino acids)","b":"N2 gas (lost to atmosphere)"},
+  {label:"ATP Production","a":"No (consumes energy)","b":"Yes (terminal e- acceptor in ETC)"},
+  {label:"Organisms","a":"Many bacteria and fungi","b":"Pseudomonas, other denitrifiers"},
+  {label:"Effect on N Cycle","a":"Retains nitrogen in biomass","b":"Removes nitrogen from ecosystem"},
+  {label:"Conditions","a":"When NH4+ unavailable","b":"Anaerobic conditions (replaces O2)"}
+]},
+{id:"purines-vs-pyrimidines",a:"Purines (A, G)",b:"Pyrimidines (C, U, T)",rows:[
+  {label:"Ring Structure","a":"2 rings (double ring)","b":"1 ring (single ring)"},
+  {label:"Members","a":"Adenine, Guanine","b":"Cytosine, Uracil, Thymine"},
+  {label:"Synthesis Strategy","a":"Ring built ON ribose-5-phosphate","b":"Ring built FIRST, then attached to R5P"},
+  {label:"Starting Material","a":"PRPP (from R5P)","b":"Carbamoyl phosphate + aspartate"},
+  {label:"First Complete","a":"IMP -> AMP or GMP","b":"Orotate -> OMP -> UMP"},
+  {label:"Folic Acid Needed","a":"Yes (one-carbon transfers)","b":"Yes (dTMP synthesis from dUMP)"},
+  {label:"Size","a":"Larger (2 rings)","b":"Smaller (1 ring)"}
+]},
+{id:"reductive-vs-oxidative-tca",a:"Reductive TCA Cycle",b:"Oxidative TCA Cycle (Normal)",rows:[
+  {label:"Direction","a":"Runs in reverse (CO2 fixation)","b":"Runs forward (oxidation)"},
+  {label:"Purpose","a":"Anabolic (fixes CO2 into organic molecules)","b":"Catabolic (oxidizes acetyl-CoA for energy) + Anabolic"},
+  {label:"Energy","a":"Consumes ATP and reducing power","b":"Produces NADH, FADH2, GTP"},
+  {label:"Unique Enzymes","a":"ATP citrate lyase, ferredoxin-linked enzymes","b":"Standard TCA enzymes"},
+  {label:"Organisms","a":"Some chemolithoautotrophs, green sulfur bacteria","b":"All aerobic organisms"},
+  {label:"CO2","a":"Fixed (consumed)","b":"Released (2 per turn)"},
+  {label:"Net Result","a":"CO2 -> Acetyl-CoA (carbon fixation)","b":"Acetyl-CoA -> CO2 + energy carriers"}
+]},
+{id:"emp-vs-ed-vs-ppp",a:"EMP",b:"ED | PPP",rows:[
+  {label:"ATP","a":"2","b":"ED: 1 | PPP: 0"},
+  {label:"NADH","a":"2","b":"ED: 1 | PPP: 0"},
+  {label:"NADPH","a":"0","b":"ED: 1 | PPP: 2"},
+  {label:"Main Purpose","a":"ATP + precursors","b":"ED: ATP + NADPH | PPP: NADPH + precursors"},
+  {label:"Used By","a":"Nearly all organisms","b":"ED: some Gram- | PPP: all organisms"},
+  {label:"Key Feature","a":"Most common, 10 steps","b":"ED: fewer steps | PPP: no ATP, runs alongside EMP"}
+]},
+{id:"homolactic-vs-heterolactic",a:"Homolactic Fermentation",b:"Heterolactic Fermentation",rows:[
+  {label:"Products","a":"Lactate only","b":"Lactate + Ethanol + CO2"},
+  {label:"Pathway","a":"EMP -> lactate","b":"PPP + partial EMP"},
+  {label:"ATP Yield","a":"2 ATP per glucose","b":"1 ATP per glucose"},
+  {label:"Organisms","a":"Streptococcus, some Lactobacillus","b":"Leuconostoc, some Lactobacillus"},
+  {label:"Food Use","a":"Yogurt, cheese","b":"Sauerkraut, kefir, sourdough"}
+]},
+{id:"nadh-vs-nadph",a:"NADH",b:"NADPH",rows:[
+  {label:"Primary Role","a":"Catabolic electron carrier","b":"Anabolic reducing agent"},
+  {label:"Delivers To","a":"ETC (energy production)","b":"Biosynthetic reactions"},
+  {label:"Main Source","a":"Glycolysis, TCA cycle, transition reaction","b":"Pentose phosphate pathway (PPP)"},
+  {label:"ATP Equivalent","a":"~2.5 ATP via ETC","b":"Not used for ATP"},
+  {label:"Structural Diff","a":"No extra phosphate","b":"Extra phosphate on 2'-OH of ribose"},
+  {label:"Carries","a":"2e- + 1H+","b":"2e- + 1H+"}
+]}
+];
+
+// ===== BIG PICTURE QUESTIONS =====
+const BIGPIC=[
+{ch:"Ch 10-11",q:"Why does the PPP run simultaneously with EMP, and what would happen if PPP were absent?",hint:"Think about what PPP provides that EMP cannot.",answer:"PPP provides NADPH (reducing power for ALL biosynthesis) and precursor metabolites (R5P for nucleotides, E4P for aromatic amino acids) that EMP cannot produce. Without PPP, cells would lack NADPH for anabolic reactions and could not synthesize nucleotides or aromatic amino acids. EMP provides ATP and different precursor metabolites. Together they supply everything the cell needs: energy (ATP), reducing power (NADPH), and all 12 precursor metabolites."},
+{ch:"Ch 10-11",q:"How does feedback inhibition of PFK1 affect the entire aerobic respiration process?",hint:"PFK1 controls the gateway to all downstream pathways.",answer:"PFK1 is inhibited by ATP and citrate (signals of energy abundance). When inhibited, glycolysis slows -> less pyruvate produced -> less acetyl-CoA for TCA -> less NADH/FADH2 for ETC -> less oxidative phosphorylation. This creates a cascade: the entire aerobic respiration system slows down when energy is plentiful. Conversely, when ATP is low (high AMP/ADP), PFK1 is activated, speeding up the entire process. PFK1 acts as the master switch for catabolic flux."},
+{ch:"Ch 11",q:"Explain why fermentation produces dramatically less ATP than respiration.",hint:"Consider what happens to NADH in each process.",answer:"In respiration, NADH donates electrons to the ETC, which creates PMF to drive ATP synthase. Each NADH yields ~2.5 ATP. In fermentation, there is NO ETC. NADH is used simply to reduce pyruvate (to lactate or ethanol), regenerating NAD+ so glycolysis can continue. The energy stored in NADH is essentially wasted - dumped into the organic end product. Result: fermentation = 2 ATP (glycolysis SLP only), respiration = ~32 ATP (SLP + OP from all NADH/FADH2). Respiration is ~16x more efficient."},
+{ch:"Ch 11-12",q:"Trace a carbon atom from glucose through glycolysis, TCA cycle, and into the amino acid glutamate.",hint:"Follow the carbon through specific intermediates.",answer:"Glucose (6C) -> split in glycolysis -> pyruvate (3C) -> transition reaction removes 1 CO2 -> acetyl-CoA (2C) -> enters TCA by combining with OAA (4C) -> citrate (6C) -> isocitrate (6C) -> alpha-ketoglutarate (5C, after losing CO2). Alpha-ketoglutarate is a precursor metabolite. Through reductive amination (adding NH4+ via glutamate dehydrogenase) or the GS-GOGAT system, alpha-ketoglutarate + NH4+ -> glutamate (amino acid). This shows how carbon flows from catabolism directly into anabolism."},
+{ch:"Ch 11-12",q:"Why are amphibolic pathways essential, and what happens when TCA intermediates are depleted for biosynthesis?",hint:"Think about the dual role of TCA and how the cell compensates.",answer:"Amphibolic pathways (like TCA) serve BOTH catabolism (energy) and anabolism (precursor metabolites). When TCA intermediates like alpha-ketoglutarate or OAA are pulled out for amino acid synthesis, the cycle would stall without replacement. Anaplerotic reactions solve this: PEP carboxylase adds CO2 to PEP -> OAA, refilling the cycle. Without anaplerotic reactions, biosynthesis would drain TCA intermediates, stopping both energy production AND further biosynthesis. This balance is the seesaw of metabolism."},
+{ch:"Ch 10-11",q:"How does the cell decide between catabolism and anabolism? What signals control this decision?",hint:"Consider energy charge and allosteric regulation.",answer:"The cell uses energy charge as the master signal. High ATP (high energy) -> inhibits catabolic enzymes (PFK1 inhibited by ATP) -> activates anabolic pathways. Low ATP / high AMP-ADP -> activates catabolic enzymes (PFK1 activated by AMP) -> inhibits biosynthesis. Feedback inhibition prevents overproduction of end products. Covalent modifications (phosphorylation) provide additional regulation. Gene expression controls enzyme levels long-term. The result is a dynamic balance: when energy is abundant, the cell builds; when energy is scarce, it breaks down fuel."},
+{ch:"Ch 10",q:"Why does the ETC release energy in multiple small steps rather than one big reaction?",hint:"Consider what happens to released energy.",answer:"If NADH transferred electrons directly to O2 in one step, the large energy release (-52.44 kcal/mol) would be mostly lost as heat - like burning fuel in an explosion. By using the ETC with multiple carriers of gradually increasing E'0, energy is released in small, manageable amounts at each step. Each step can be coupled to proton pumping across the membrane, creating PMF. This stepwise process captures ~40% of the energy as ATP, far more efficient than a single-step reaction. It is like descending a staircase vs jumping off a cliff."},
+{ch:"Ch 11",q:"Compare the three glycolytic pathways: when would each be advantageous?",hint:"Consider ATP yield, NADPH production, and enzyme cost.",answer:"EMP: Best for rapid ATP production (2 ATP/glucose), used when energy is primary need. Has 10 enzymes but produces most ATP. Used by most organisms. ED: Uses fewer enzymes (cheaper to maintain), produces NADPH (useful for biosynthesis). Advantageous for organisms in nutrient-rich environments where maximal ATP not critical (e.g., Pseudomonas in soil with abundant organics). PPP: Produces NO ATP but generates NADPH for biosynthesis and R5P for nucleotides. Essential when cell is actively growing and needs building materials. All three can run simultaneously."},
+{ch:"Ch 11-12",q:"A bacterium is growing in minimal medium with glucose and NH4Cl. Trace how it makes the amino acid phenylalanine.",hint:"Think about which pathways and precursor metabolites are needed.",answer:"(1) Glucose enters EMP -> produces PEP (precursor metabolite from glycolysis). (2) Simultaneously, glucose enters PPP -> produces Erythrose-4P (E4P, precursor metabolite from PPP). (3) PEP + E4P enter the shikimate pathway -> chorismate -> phenylalanine. (4) The amino group comes from glutamate via transaminase (PLP-dependent). (5) Glutamate was made from alpha-ketoglutarate (TCA cycle) + NH4+ (from NH4Cl). This shows how EMP, PPP, TCA, and nitrogen assimilation all integrate for one amino acid."},
+{ch:"Ch 11",q:"Why does FADH2 yield less ATP than NADH in the ETC?",hint:"Consider where each enters the chain.",answer:"NADH donates electrons to Complex I (NADH dehydrogenase), which pumps 4 H+. Electrons then pass through CoQ -> Complex III (4 H+) -> Cyt c -> Complex IV (2 H+). Total: 10 H+ pumped. FADH2 donates electrons to Complex II (succinate dehydrogenase), which does NOT pump protons. Electrons enter at CoQ level, bypassing Complex I entirely. So only Complex III (4 H+) and Complex IV (2 H+) pump protons. Total: 6 H+ pumped. Fewer protons = less PMF = less ATP: ~2.5 for NADH vs ~1.5 for FADH2."},
+{ch:"Ch 12",q:"Why can't cells make glucose from fatty acids (via acetyl-CoA)?",hint:"Think about the transition reaction.",answer:"The transition reaction (pyruvate -> acetyl-CoA) is IRREVERSIBLE. There is no enzyme that converts acetyl-CoA back to pyruvate. In the TCA cycle, the 2 carbons from acetyl-CoA are lost as 2 CO2 (at isocitrate DH and alpha-KG DH steps). So there is no net carbon gain from acetyl-CoA to make glucose. Gluconeogenesis requires pyruvate or later glycolytic intermediates. Since fatty acid breakdown produces only acetyl-CoA (via beta-oxidation), fatty acids cannot be converted to glucose. This is a fundamental metabolic constraint."},
+{ch:"Ch 10-12",q:"How do sulfa drugs connect enzyme inhibition (Ch 10) to nucleotide synthesis (Ch 12) to killing bacteria?",hint:"Follow the chain: PABA -> folic acid -> nucleotides -> growth.",answer:"(1) Ch 10: Sulfa drugs are structural analogs of PABA and act as competitive inhibitors of dihydropteroate synthase. (2) This blocks folic acid (tetrahydrofolate) synthesis. (3) Ch 12: Folic acid is essential for one-carbon transfers in nucleotide synthesis (both purines and pyrimidines). (4) Without nucleotides, bacteria cannot make DNA/RNA -> cannot grow or divide. (5) Humans are unaffected because we obtain folic acid from diet (we lack the synthetic enzyme). This spans enzyme regulation, biosynthesis, and selective toxicity."},
+{ch:"Ch 11",q:"Explain how the proton motive force (PMF) serves four different cellular functions.",hint:"ATP is not the only use of PMF.",answer:"(1) ATP synthesis: PMF drives protons through ATP synthase (F0F1), powering the rotary motor that makes ATP (chemiosmosis). (2) Flagellar rotation: PMF drives proton flow through the flagellar motor (MotA/MotB), spinning the flagellum for motility. (3) Active transport: PMF provides energy for proton-coupled transport of nutrients across the membrane (symport/antiport). (4) Reverse electron flow: Some chemolithotrophs use PMF energy to push electrons backward from donors with high E'0 to reduce NAD+ (which has lower E'0). PMF is a universal energy currency of the membrane."},
+{ch:"Ch 12",q:"Why is the distinction between assimilatory and dissimilatory nitrate reduction so important?",hint:"One builds, one generates energy. Completely different purposes.",answer:"Assimilatory: NO3- -> NO2- -> NH4+ (anabolic). Purpose is to obtain nitrogen for building amino acids. Consumes energy. NH4+ is incorporated into glutamate via GS-GOGAT. Occurs when NH4+ is unavailable. Dissimilatory: NO3- -> NO2- -> N2 (catabolic/denitrification). Purpose is ENERGY generation - NO3- serves as terminal electron acceptor in anaerobic respiration ETC. Produces ATP. The N2 is lost to atmosphere. Occurs in anaerobic conditions. Same starting molecule (NO3-) but completely opposite metabolic purposes and consequences."},
+{ch:"Ch 10-12",q:"Design a concept map connecting these terms: PFK1, ATP, PEP, pyruvate, acetyl-CoA, TCA cycle, OAA, aspartate, feedback inhibition.",hint:"Start with glycolysis and follow the flow.",answer:"PFK1 (pacemaker of glycolysis) is inhibited by ATP (feedback inhibition) and activated by AMP. PFK1 controls flow to PEP -> pyruvate (via pyruvate kinase). Pyruvate -> acetyl-CoA (irreversible transition reaction). Acetyl-CoA + OAA -> enters TCA cycle. TCA generates ATP (via NADH -> ETC). High ATP inhibits PFK1 (feedback loop!). OAA (TCA intermediate) can be pulled out for aspartate synthesis (transamination). If OAA depleted, anaplerotic reactions refill from PEP. This shows the interconnected regulation from glycolysis through TCA to biosynthesis."},
+{ch:"Ch 11",q:"A cell switches from aerobic to anaerobic conditions. Describe what changes metabolically.",hint:"Think about what O2 does and what replaces it.",answer:"(1) O2 no longer available as terminal electron acceptor. (2) If alternative acceptors available (NO3-, SO4(2-)): switch to anaerobic respiration. Still use ETC but less ATP (lower delta-E'0). (3) If NO alternative acceptors: switch to fermentation. ETC shuts down. Only glycolysis SLP for ATP (2 per glucose). Must regenerate NAD+ by reducing pyruvate. (4) ATP yield drops dramatically (32 -> 2). (5) Cell must increase glucose consumption rate to compensate. (6) PFK1 becomes more active (low ATP = relieved inhibition). (7) Fermentation products accumulate (lactate, ethanol, etc.)."},
+{ch:"Ch 12",q:"Explain why the 12 precursor metabolites represent a critical bridge between catabolism and anabolism.",hint:"They are the connection points.",answer:"The 12 precursor metabolites are intermediates of catabolic pathways (EMP, PPP, TCA) that serve as carbon skeletons for ALL biosynthesis. They are the physical connection between catabolism and anabolism. From EMP (6): G6P (polysaccharides), F6P (peptidoglycan), G3P (lipids), 3PG (serine family), PEP (aromatic AAs), pyruvate (Ala, Val, Leu). From PPP (3-4): R5P (nucleotides), E4P (aromatic AAs), S7P. From TCA (3): Acetyl-CoA (fatty acids), alpha-KG (glutamate family), OAA (aspartate family). Without these, catabolism cannot feed anabolism."},
+{ch:"Ch 12",q:"How does a nitrogen-fixing bacterium in a legume root nodule solve the O2 problem?",hint:"Nitrogenase is O2-sensitive but the bacteroid needs O2 for respiration.",answer:"Nitrogenase is irreversibly inactivated by O2, yet Rhizobium needs O2 for aerobic respiration (ATP production). Solution: the plant produces leghemoglobin (similar to hemoglobin), which binds O2 tightly, keeping free O2 concentration very low while still delivering O2 to the bacteroid for respiration. This creates a microaerobic environment: enough O2 for respiration but too little to damage nitrogenase. Additionally, the bacteroid has high-affinity terminal oxidases (like bd oxidase) that can function at very low O2 concentrations. Nitrogen fixation requires 16 ATP per N2, so respiration must continue."},
+{ch:"Ch 11",q:"Compare the efficiency of ATP production from glucose using aerobic respiration versus fermentation. Why might fermentation still be advantageous?",hint:"Efficiency is not the only consideration.",answer:"Aerobic: ~32 ATP per glucose (~40% energy capture). Fermentation: 2 ATP per glucose (~2% energy capture). Despite being 16x less efficient, fermentation is advantageous when: (1) No O2 available (obligate fermenters, anaerobic environments). (2) Speed matters: fermentation is FASTER than respiration (no ETC bottleneck), allowing rapid growth when nutrients abundant. (3) Simpler machinery: no ETC complexes needed, fewer enzymes to synthesize. (4) Fermentation products can inhibit competitors (lactic acid lowers pH, ethanol is toxic). (5) Some organisms lack ETC genes entirely."},
+{ch:"Ch 10",q:"Use the Nernst equation to explain why aerobic respiration yields more energy than using NO3- as terminal acceptor.",hint:"Compare E'0 values and calculate delta-G for each.",answer:"Nernst equation: delta-G' = -nF(delta-E'0). For NADH (-0.32V) to O2 (+0.82V): delta-E'0 = 1.14V, delta-G' = -(2)(23)(1.14) = -52.44 kcal/mol. For NADH (-0.32V) to NO3-/NO2- (+0.42V): delta-E'0 = 0.74V, delta-G' = -(2)(23)(0.74) = -34.04 kcal/mol. Aerobic releases 52.44 vs 34.04 kcal/mol - about 54% more energy per electron pair. This translates to more protons pumped, higher PMF, and more ATP. Rule 2 of redox: greater delta-E'0 = more energy, and O2 has the highest E'0 of common acceptors."},
+];
+
+// ===== STATE =====
+let mode='flashcard',fcIdx=0,flipped=false,mastered={},streak=0,qCorrect=0,qTotal=0;
+let activeCats=new Set(),bpIdx=0,openPwStep=-1,selPathway='emp';
+const LS_KEY='metab1';
+
+function load(){try{const d=JSON.parse(localStorage.getItem(LS_KEY));if(d){mastered=d.mastered||{};streak=d.streak||0;qCorrect=d.qCorrect||0;qTotal=d.qTotal||0;}}catch(e){}}
+function save(){localStorage.setItem(LS_KEY,JSON.stringify({mastered,streak,qCorrect,qTotal}));}
+load();
+
+// ===== FILTERING =====
+function getFilteredFC(){
+  if(activeCats.size===0) return FC;
+  return FC.filter(f=>activeCats.has(f.ch)||activeCats.has(f.cat));
+}
+
+// ===== NAV =====
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+m).classList.add('active');
+  ['flashcard','quiz','pathway','map','bigpic','compare'].forEach(v=>{
+    document.getElementById('mode-'+v).classList.toggle('hidden',v!==m);
+  });
+  if(m==='flashcard'){fcIdx=0;flipped=false;renderFC();}
+  else if(m==='quiz') nxtQ();
+  else if(m==='pathway') renderPathway();
+  else if(m==='map') renderMap();
+  else if(m==='bigpic'){bpIdx=0;renderBP();}
+  else if(m==='compare') renderCompare();
+  buildCatPills();
+  updateStats();
+}
+
+// ===== CATEGORY PILLS =====
+function buildCatPills(){
+  const el=document.getElementById('catF');
+  const chapters=["Ch 10","Ch 11","Ch 12"];
+  const cats=[...new Set(FC.map(f=>f.cat))];
+  let h='';
+  chapters.forEach(c=>{h+=`<span class="cat-pill${activeCats.has(c)?' on':''}" onclick="toggleCat('${c}')" style="border-color:${CH_COLORS[c]||'#1e1e2e'};${activeCats.has(c)?'background:'+CH_COLORS[c]+'22;color:'+CH_COLORS[c]:''}">${c}</span>`;});
+  cats.forEach(c=>{h+=`<span class="cat-pill${activeCats.has(c)?' on':''}" onclick="toggleCat('${c}')">${c}</span>`;});
+  el.innerHTML=h;
+}
+function toggleCat(c){activeCats.has(c)?activeCats.delete(c):activeCats.add(c);buildCatPills();if(mode==='flashcard'){fcIdx=0;flipped=false;renderFC();}else if(mode==='map')renderMap();updateStats();}
+
+// ===== STATS =====
+function updateStats(){
+  const fc=getFilteredFC();
+  const m=fc.filter(f=>mastered[f.id]).length;
+  document.getElementById('sT').textContent=fc.length;
+  document.getElementById('sM').textContent=m;
+  document.getElementById('sS').textContent=streak;
+  document.getElementById('sA').textContent=qTotal?Math.round(qCorrect/qTotal*100)+'%':'0%';
+  document.getElementById('pF').style.width=(fc.length?Math.round(m/fc.length*100):0)+'%';
+}
+
+// ===== FLASHCARD =====
+function renderFC(){
+  const fc=getFilteredFC();
+  if(!fc.length){document.getElementById('mode-flashcard').innerHTML='<div style="color:#444;text-align:center;padding:40px">No cards match filter</div>';return;}
+  if(fcIdx>=fc.length)fcIdx=0;
+  const c=fc[fcIdx];
+  const col=CAT_COLORS[c.cat]||'#8b7aff';
+  const chCls=c.ch.replace(' ','').toLowerCase();
+  let h=`<div class="fc" onclick="flipFC()">
+    <span class="tag" style="background:${col}22;color:${col};border:1px solid ${col}44">${c.cat}</span>
+    <span class="idx">${fcIdx+1}/${fc.length}</span>`;
+  if(!flipped){
+    h+=`<span class="ch-badge ${chCls}">${c.ch}</span>
+    <div class="term-name">${c.term}</div>
+    <div class="tap">Tap to reveal</div>`;
+  } else {
+    h+=`<span class="ch-badge ${chCls}">${c.ch}</span>
+    <div class="details">
+      <div class="detail-row"><div class="detail-label">Definition</div><div class="detail-val">${c.definition}</div></div>`;
+    if(c.pathway) h+=`<div class="detail-row"><div class="detail-label">Pathway</div><div class="pills"><span class="pill pill-pathway">${c.pathway}</span></div></div>`;
+    if(c.details&&c.details.length) h+=`<div class="detail-row"><div class="detail-label">Key Points</div>${c.details.map(d=>'<div class="detail-val" style="margin-bottom:3px">- '+d+'</div>').join('')}</div>`;
+    if(c.connections&&c.connections.length) h+=`<div class="detail-row"><div class="detail-label">Connections</div><div class="pills">${c.connections.map(cn=>'<span class="pill pill-connection">'+cn+'</span>').join('')}</div></div>`;
+    if(c.examTip) h+=`<div class="exam-tip">Exam Tip: ${c.examTip}</div>`;
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  h+=`<div class="ctrls">
+    <button onclick="prevFC()">Prev</button>
+    <button class="c-no" onclick="markFC(false)">Still Learning</button>
+    <button class="c-yes" onclick="markFC(true)">Mastered</button>
+    <button onclick="nextFC()">Next</button>
+  </div>`;
+  document.getElementById('mode-flashcard').innerHTML=h;
+}
+function flipFC(){flipped=!flipped;renderFC();}
+function nextFC(){const fc=getFilteredFC();fcIdx=(fcIdx+1)%fc.length;flipped=false;renderFC();}
+function prevFC(){const fc=getFilteredFC();fcIdx=(fcIdx-1+fc.length)%fc.length;flipped=false;renderFC();}
+function markFC(v){const fc=getFilteredFC();if(!fc.length)return;const c=fc[fcIdx];if(v){mastered[c.id]=true;streak++;}else{delete mastered[c.id];streak=0;}save();nextFC();updateStats();}
+
+// ===== QUIZ =====
+let curQ=null;
+function nxtQ(){
+  const pool=activeCats.size?QUIZ.filter(q=>activeCats.has(q.ch)):QUIZ;
+  if(!pool.length){document.getElementById('qT').textContent='No questions match filter';return;}
+  curQ=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('qL').textContent=curQ.ch;
+  document.getElementById('qT').textContent=curQ.q;
+  document.getElementById('qR').textContent='';
+  const fb=document.getElementById('qF');fb.className='qz-fb';fb.textContent='';
+  const el=document.getElementById('qO');
+  el.innerHTML=curQ.opts.map((o,i)=>`<div class="qz-o" onclick="ansQ(${i})">${o}</div>`).join('');
+}
+function ansQ(i){
+  qTotal++;
+  const opts=document.querySelectorAll('.qz-o');
+  opts.forEach((o,j)=>{o.classList.add('off');if(j===curQ.ans)o.classList.add('ok');if(j===i&&j!==curQ.ans)o.classList.add('bad');});
+  const fb=document.getElementById('qF');
+  if(i===curQ.ans){qCorrect++;streak++;fb.className='qz-fb show gd';fb.textContent='Correct! '+curQ.exp;}
+  else{streak=0;fb.className='qz-fb show bd';fb.textContent='Incorrect. '+curQ.exp;}
+  save();updateStats();
+}
+
+// ===== PATHWAY EXPLORER =====
+function renderPathway(){
+  const wrap=document.getElementById('mode-pathway');
+  let h=`<div class="pw-select-row"><select class="pw-select" onchange="selPathway=this.value;openPwStep=-1;renderPathway()">`;
+  PATHWAYS.forEach(p=>{h+=`<option value="${p.id}"${p.id===selPathway?' selected':''}>${p.name}</option>`;});
+  h+=`</select></div>`;
+  const pw=PATHWAYS.find(p=>p.id===selPathway);
+  if(!pw){wrap.innerHTML=h+'<div class="cmp-empty">Select a pathway</div>';return;}
+  h+=`<div class="pw-info">
+    <div class="pw-title">${pw.name}</div>
+    <div class="pw-loc">${pw.location} | ${pw.chapter}</div>
+    <div class="pw-desc">${pw.significance}</div>
+    <div class="pw-yield">`;
+  if(pw.netYield.atp)h+=`<span class="yd yd-atp">${pw.netYield.atp>0?'+':''}${pw.netYield.atp} ATP</span>`;
+  if(pw.netYield.nadh)h+=`<span class="yd yd-nadh">${pw.netYield.nadh>0?'+':''}${pw.netYield.nadh} NADH</span>`;
+  if(pw.netYield.nadph)h+=`<span class="yd yd-nadph">${pw.netYield.nadph>0?'+':''}${pw.netYield.nadph} NADPH</span>`;
+  if(pw.netYield.fadh2)h+=`<span class="yd yd-fadh2">${pw.netYield.fadh2>0?'+':''}${pw.netYield.fadh2} FADH2</span>`;
+  if(pw.netYield.co2)h+=`<span class="yd yd-co2">${pw.netYield.co2>0?'+':''}${pw.netYield.co2} CO2</span>`;
+  if(pw.netYield.gtp)h+=`<span class="yd yd-atp">+${pw.netYield.gtp} GTP</span>`;
+  h+=`</div>`;
+  if(pw.precursorMetabolites.length){
+    h+=`<div style="margin-top:8px"><span style="font-size:.68rem;color:#ffd700">Precursor Metabolites: </span>`;
+    h+=pw.precursorMetabolites.map(p=>`<span class="pill pill-precursor">${p}</span>`).join(' ');
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  h+=`<div class="pw-steps">`;
+  pw.steps.forEach((s,i)=>{
+    const isPrecursor=pw.precursorMetabolites.includes(s.substrate)||s.precursor;
+    const isProdPrecursor=pw.precursorMetabolites.includes(s.product);
+    const isCost=s.energyChange.includes('-')&&s.energyChange!=='--';
+    const isGain=s.energyChange.includes('+');
+    h+=`<div class="pw-step-row" onclick="togglePwStep(${i})">
+      <span class="pw-step-arrow">${i===0?'':'-->'}</span>
+      <div class="pw-step-content${isPrecursor?' precursor':''}${isCost?' energy-cost':''}${isGain?' energy-gain':''}">
+        <span class="sc-name">${s.substrate}${isPrecursor?' *':''}</span>
+        <span class="sc-enzyme">${s.enzyme}</span>
+        <span class="sc-energy${isCost?' cost':''}${isGain?' gain':''}">${s.energyChange!=='--'?s.energyChange:''}</span>
+      </div>
+    </div>`;
+    if(openPwStep===i){
+      h+=`<div class="pw-detail-popup">
+        <div class="dp-title">${s.substrate} -> ${s.product}</div>
+        <div class="dp-row"><div class="dp-label">Enzyme</div><div class="dp-val">${s.enzyme}</div></div>
+        <div class="dp-row"><div class="dp-label">Energy Change</div><div class="dp-val">${s.energyChange==='--'?'None':s.energyChange}</div></div>
+        <div class="dp-row"><div class="dp-label">Notes</div><div class="dp-val">${s.notes}</div></div>
+        ${isPrecursor?'<div class="dp-row"><div class="dp-label" style="color:#ffd700">Precursor Metabolite</div><div class="dp-val" style="color:#ffd700">Used as starting material for biosynthesis</div></div>':''}
+      </div>`;
+    }
+  });
+  // Final product
+  const lastStep=pw.steps[pw.steps.length-1];
+  const lastPrecursor=pw.precursorMetabolites.includes(lastStep.product);
+  h+=`<div class="pw-step-row">
+    <span class="pw-step-arrow">--></span>
+    <div class="pw-step-content${lastPrecursor?' precursor':''}" style="border-color:#8b7aff">
+      <span class="sc-name" style="color:#8b7aff">${lastStep.product}${lastPrecursor?' *':''}</span>
+      <span class="sc-enzyme" style="color:#888">Final product</span>
+    </div>
+  </div>`;
+  h+=`</div>`;
+  h+=`<div style="margin-top:10px;font-size:.68rem;color:#ffd700">* = Precursor metabolite</div>`;
+  h+=`<div style="margin-top:4px;font-size:.68rem;color:#ff6b6b">Red border = energy consumed</div>`;
+  h+=`<div style="font-size:.68rem;color:#4ade80">Green border = energy produced</div>`;
+  h+=`<div style="font-size:.68rem;color:#ffd700">Gold border = precursor metabolite</div>`;
+  wrap.innerHTML=h;
+}
+function togglePwStep(i){openPwStep=openPwStep===i?-1:i;renderPathway();}
+
+// ===== CONCEPT MAP =====
+function renderMap(){
+  const fc=getFilteredFC();
+  const el=document.getElementById('mode-map');
+  el.innerHTML=fc.map(c=>{
+    const col=CAT_COLORS[c.cat]||'#8b7aff';
+    const chCol=CH_COLORS[c.ch]||'#888';
+    return `<div class="mc${mastered[c.id]?' done':''}" onclick="mastered['${c.id}']?delete mastered['${c.id}']:mastered['${c.id}']=true;save();renderMap();updateStats();" style="border-left-color:${col}">
+      <span class="mc-cat" style="background:${col}22;color:${col}">${c.cat}</span>
+      <span class="mc-ch" style="background:${chCol}" title="${c.ch}"></span>
+      <div class="mc-name">${c.term}</div>
+      <div class="mc-def">${c.definition.substring(0,100)}${c.definition.length>100?'...':''}</div>
+      ${c.pathway?'<div class="mc-pathway">'+c.pathway+'</div>':''}
+      ${c.examTip?'<div class="mc-key">'+c.examTip+'</div>':''}
+    </div>`;
+  }).join('');
+}
+
+// ===== BIG PICTURE =====
+function renderBP(){
+  const wrap=document.getElementById('mode-bigpic');
+  if(!BIGPIC.length){wrap.innerHTML='<div class="cmp-empty">No questions</div>';return;}
+  if(bpIdx>=BIGPIC.length)bpIdx=0;
+  const b=BIGPIC[bpIdx];
+  let h=`<div class="bp-card">
+    <div class="bp-ch">${b.ch} | Question ${bpIdx+1} of ${BIGPIC.length}</div>
+    <div class="bp-q">${b.q}</div>
+    <button class="bp-hint-btn" onclick="this.textContent=this.textContent.startsWith('Show')?'Hint: ${b.hint.replace(/'/g,"\\'")}':'Show Hint'">${'Show Hint'}</button>
+    <button class="bp-hint-btn" style="color:#4ade80;border-color:#1a3a22" onclick="document.getElementById('bpA').classList.toggle('show')">Show/Hide Answer</button>
+    <div class="bp-answer" id="bpA">
+      <h4>Answer</h4>
+      ${b.answer}
+    </div>
+  </div>`;
+  h+=`<div class="bp-nav">
+    <button class="ctrls" style="display:inline"><button onclick="bpIdx=(bpIdx-1+BIGPIC.length)%BIGPIC.length;renderBP();" style="padding:7px 18px;border-radius:7px;border:1px solid #1e1e2e;background:#141420;color:#bbb;cursor:pointer;font-size:.82rem">Prev</button></button>
+    <button onclick="bpIdx=(bpIdx+1)%BIGPIC.length;renderBP();" style="padding:7px 18px;border-radius:7px;border:1px solid #1e1e2e;background:#141420;color:#bbb;cursor:pointer;font-size:.82rem">Next</button>
+    <button onclick="bpIdx=Math.floor(Math.random()*BIGPIC.length);renderBP();" style="padding:7px 18px;border-radius:7px;border:1px solid #8b7aff;background:#141420;color:#8b7aff;cursor:pointer;font-size:.82rem">Random</button>
+  </div>`;
+  wrap.innerHTML=h;
+}
+
+// ===== COMPARE =====
+let cmpPreset=0;
+function renderCompare(){
+  const wrap=document.getElementById('mode-compare');
+  let h='<div class="cmp-presets">';
+  COMPARISONS.forEach((c,i)=>{h+=`<span class="cmp-preset" onclick="cmpPreset=${i};renderCompare()">${c.a} vs ${c.b}</span>`;});
+  h+='</div>';
+  if(cmpPreset>=COMPARISONS.length)cmpPreset=0;
+  const cmp=COMPARISONS[cmpPreset];
+  h+=`<table class="cmp-table"><thead><tr>
+    <th>Aspect</th><th class="col-a">${cmp.a}</th><th class="col-b">${cmp.b}</th>
+  </tr></thead><tbody>`;
+  cmp.rows.forEach(r=>{
+    const isDiff=r.a!==r.b;
+    h+=`<tr><td>${r.label}</td><td${isDiff?' class="diff"':''}>${r.a}</td><td${isDiff?' class="diff"':''}>${r.b}</td></tr>`;
+  });
+  h+=`</tbody></table>`;
+  wrap.innerHTML=h;
+}
+
+// ===== KEYBOARD =====
+document.addEventListener('keydown',e=>{
+  if(mode==='flashcard'){
+    if(e.code==='Space'){e.preventDefault();flipFC();}
+    if(e.code==='KeyN'||e.code==='ArrowRight')nextFC();
+    if(e.code==='ArrowLeft')prevFC();
+  }
+  if(mode==='bigpic'){
+    if(e.code==='ArrowRight'){bpIdx=(bpIdx+1)%BIGPIC.length;renderBP();}
+    if(e.code==='ArrowLeft'){bpIdx=(bpIdx-1+BIGPIC.length)%BIGPIC.length;renderBP();}
+  }
+});
+
+// ===== INIT =====
+buildCatPills();
+updateStats();
+renderFC();
+</script>
+</body>
+</html>
